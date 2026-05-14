@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Gestion Boutique</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card card">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Bienvenue</h1>
+            <p style="color: var(--text-muted);">Connectez-vous pour accéder au système</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="font-size: 0.85rem; padding: 0.75rem; margin-bottom: 1.5rem;">{{
+            message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('login') }}" method="POST">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" name="username" id="username" placeholder="Ex: admin" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" name="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-submit">Se Connecter</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 2rem; font-size: 0.8rem; color: var(--text-muted);">
+            &copy; 2026 ONGOIBA DISTRIBUTION
+        </p>
+    </div>
+</body>
+
+</html>

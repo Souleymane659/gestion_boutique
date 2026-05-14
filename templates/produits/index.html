@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2>Inventaire des Produits</h2>
+            <span class="badge badge-stock">{{ produits|length }} Produits</span>
+        </div>
+        <a href="{{ url_for('ajouter') }}" class="btn-add">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Ajouter un Produit
+        </a>
+    </div>
+
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom du Produit</th>
+                    <th>Prix Achat</th>
+                    <th>Prix Vente</th>
+                    <th>Stock</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produit in produits %}
+                <tr>
+                    <td>#{{ produit.id_produit }}</td>
+                    <td style="font-weight: 600;">{{ produit.nom_produit }}</td>
+                    <td>{{ "{:,.0f}".format(produit.prix_achat) }} FCFA</td>
+                    <td>{{ "{:,.0f}".format(produit.prix_vente) }} FCFA</td>
+                    <td>
+                        <span class="badge badge-stock">{{ produit.quantite_stock }}</span>
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('modifier', id=produit.id_produit) }}" class="btn-icon btn-edit" title="Modifier">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </a>
+                        <a href="{{ url_for('supprimer', id=produit.id_produit) }}" class="btn-icon btn-delete" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not produits %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                        Aucun produit dans l'inventaire. <a href="{{ url_for('ajouter') }}" style="color: var(--primary);">Ajouter un produit</a>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="invoice-container card" id="printable-area">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+        <div>
+            <h1 style="color: var(--primary); margin-bottom: 0.5rem;">FACTURE ONGOIBA DISTRIBUTION</h1>
+            <p style="color: var(--text-muted);">#INV-{{ "%05d"|format(vente.id_vente) }}</p>
+        </div>
+        <div style="text-align: right;">
+            <h2 style="margin-bottom: 0.5rem;">Ma Boutique</h2>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">
+                Bamako Mali<br>
+                Kalabancoro Marché<br>
+                Tel: +223 79 37 84 71
+            </p>
+        </div>
+    </div>
+
+    <div
+        style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem; padding: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 16px;">
+        <div>
+            <h4 style="text-transform: uppercase; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Facturer à</h4>
+            <p style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;">{{ vente.nom_client }} {{
+                vente.prenom_client }}</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">
+                {{ vente.adresse or 'N/A' }}<br>
+                {{ vente.telephone or '' }}<br>
+                {{ vente.email or '' }}
+            </p>
+        </div>
+        <div style="text-align: right;">
+            <h4 style="text-transform: uppercase; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Détails</h4>
+            <p style="font-size: 0.9rem;"><strong>Date:</strong> {{ vente.date_vente.strftime('%d %B %Y') }}</p>
+            <p style="font-size: 0.9rem;"><strong>Heure:</strong> {{ vente.date_vente.strftime('%H:%M') }}</p>
+        </div>
+    </div>
+
+    <table class="invoice-table" style="margin-bottom: 3rem;">
+        <thead>
+            <tr>
+                <th style="width: 50%;">Description</th>
+                <th style="text-align: center;">Qté</th>
+                <th style="text-align: right;">Prix Unitaire</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in lignes %}
+            <tr>
+                <td>
+                    <p style="font-weight: 600; margin-bottom: 0.1rem;">{{ ligne.nom_produit }}</p>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Ref: #{{ ligne.id_produit }}</span>
+                </td>
+                <td style="text-align: center;">{{ ligne.quantite }}</td>
+                <td style="text-align: right;">{{ "{:,.0f}".format(ligne.prix_unitaire) }} FCFA</td>
+                <td style="text-align: right; font-weight: 700;">{{ "{:,.0f}".format(ligne.quantite *
+                    ligne.prix_unitaire) }} FCFA</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="display: flex; justify-content: flex-end;">
+        <div style="width: 300px;">
+            <div
+                style="display: flex; justify-content: space-between; padding: 1rem 0; border-top: 2px solid var(--primary);">
+                <span style="font-weight: 700; font-size: 1.25rem;">TOTAL</span>
+                <span style="font-weight: 700; font-size: 1.25rem; color: var(--success);">{{
+                    "{:,.0f}".format(vente.total) }} FCFA</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); text-align: right; margin-top: 1rem;">
+                Arrêté à la somme de : <br>
+                <strong style="text-transform: uppercase; color: var(--text-main);">{{ vente.total|int }} FRANCS
+                    CFA</strong>
+            </p>
+        </div>
+    </div>
+
+    <div style="margin-top: 5rem; text-align: center; border-top: 1px dashed var(--glass-border); padding-top: 2rem;">
+        <p style="font-size: 0.9rem; color: var(--text-muted);">Merci de votre confiance !</p>
+    </div>
+</div>
+
+<div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;" class="no-print">
+    <button onclick="window.print()" class="btn-submit" style="width: auto; background: var(--success);">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            style="margin-right: 0.5rem; vertical-align: middle;">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Imprimer la Facture
+    </button>
+    <a href="{{ url_for('index_ventes') }}" class="btn-submit"
+        style="width: auto; background: var(--secondary); text-decoration: none;">Retour aux Ventes</a>
+</div>
+
+<style>
+    @media print {
+        body {
+            background: white !important;
+            color: black !important;
+        }
+
+        .navbar,
+        .footer,
+        .no-print,
+        .nav-links,
+        .btn-add {
+            display: none !important;
+        }
+
+        .main-content {
+            padding: 0 !important;
+        }
+
+        .card {
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            color: black !important;
+        }
+
+        .invoice-container {
+            margin: 0 !important;
+            width: 100% !important;
+        }
+
+        * {
+            color: black !important;
+            text-shadow: none !important;
+        }
+
+        .invoice-table th {
+            border-bottom: 2px solid #333 !important;
+            color: black !important;
+        }
+
+        .invoice-table td {
+            border-bottom: 1px solid #eee !important;
+        }
+
+        .invoice-container {
+            background: white !important;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            color: black !important;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,507 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+import mysql.connector
+from config import Config
+from functools import wraps
+
+app = Flask(__name__)
+app.config.from_object(Config)
+
+# --- AUTHENTICATION ---
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Admin credentials provided by user
+        if username == 'admin' and password == '65659188':
+            session['logged_in'] = True
+            session['username'] = username
+            flash('Connexion réussie !', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Identifiants incorrects.', 'danger')
+            
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Vous avez été déconnecté.', 'success')
+    return redirect(url_for('login'))
+
+
+def get_db_connection():
+    conn = mysql.connector.connect(
+        host=app.config['MYSQL_HOST'],
+        user=app.config['MYSQL_USER'],
+        password=app.config['MYSQL_PASSWORD'],
+        database=app.config['MYSQL_DB']
+    )
+    return conn
+
+@app.route('/')
+@login_required
+def index():
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM produits')
+    produits = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('produits/index.html', produits=produits)
+
+
+@app.route('/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter():
+
+    if request.method == 'POST':
+        id_produit = request.form['id_produit']
+        nom_produit = request.form['nom_produit']
+        prix_achat = request.form['prix_achat']
+        prix_vente = request.form['prix_vente']
+        quantite_stock = request.form['quantite_stock']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO produits (id_produit, nom_produit, prix_achat, prix_vente, quantite_stock)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (id_produit, nom_produit, prix_achat, prix_vente, quantite_stock))
+            conn.commit()
+            flash('Produit ajouté avec succès !', 'success')
+        except mysql.connector.Error as err:
+            flash(f"Erreur : {err}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        
+        return redirect(url_for('index'))
+
+    return render_template('produits/ajouter.html')
+
+
+@app.route('/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        nom_produit = request.form['nom_produit']
+        prix_achat = request.form['prix_achat']
+        prix_vente = request.form['prix_vente']
+        quantite_stock = request.form['quantite_stock']
+
+        cursor.execute('''
+            UPDATE produits
+            SET nom_produit=%s, prix_achat=%s, prix_vente=%s, quantite_stock=%s
+            WHERE id_produit=%s
+        ''', (nom_produit, prix_achat, prix_vente, quantite_stock, id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Produit modifié avec succès !', 'success')
+        return redirect(url_for('index'))
+
+    cursor.execute('SELECT * FROM produits WHERE id_produit = %s', (id,))
+    produit = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if produit is None:
+        return "Produit non trouvé", 404
+        
+    return render_template('produits/modifier.html', produit=produit)
+
+
+@app.route('/supprimer/<int:id>')
+@login_required
+def supprimer(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM produits WHERE id_produit = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Produit supprimé avec succès !', 'success')
+    return redirect(url_for('index'))
+
+# --- ROUTES CLIENTS ---
+
+@app.route('/clients')
+@login_required
+def index_clients():
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM clients')
+    clients = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('clients/index.html', clients=clients)
+
+@app.route('/clients/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_client():
+
+    if request.method == 'POST':
+        id_client = request.form['id_client']
+        nom = request.form['nom']
+        prenom = request.form['prenom']
+        telephone = request.form['telephone']
+        email = request.form['email']
+        adresse = request.form['adresse']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO clients (id_client, nom, prenom, telephone, email, adresse)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            ''', (id_client, nom, prenom, telephone, email, adresse))
+            conn.commit()
+            flash('Client ajouté avec succès !', 'success')
+        except mysql.connector.Error as err:
+            flash(f"Erreur : {err}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        
+        return redirect(url_for('index_clients'))
+
+    return render_template('clients/ajouter.html')
+
+@app.route('/clients/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_client(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        nom = request.form['nom']
+        prenom = request.form['prenom']
+        telephone = request.form['telephone']
+        email = request.form['email']
+        adresse = request.form['adresse']
+
+        cursor.execute('''
+            UPDATE clients
+            SET nom=%s, prenom=%s, telephone=%s, email=%s, adresse=%s
+            WHERE id_client=%s
+        ''', (nom, prenom, telephone, email, adresse, id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Client modifié avec succès !', 'success')
+        return redirect(url_for('index_clients'))
+
+    cursor.execute('SELECT * FROM clients WHERE id_client = %s', (id,))
+    client = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if client is None:
+        return "Client non trouvé", 404
+        
+    return render_template('clients/modifier.html', client=client)
+
+@app.route('/clients/supprimer/<int:id>')
+@login_required
+def supprimer_client(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM clients WHERE id_client = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Client supprimé avec succès !', 'success')
+    return redirect(url_for('index_clients'))
+
+
+# --- ROUTES FOURNISSEURS ---
+
+@app.route('/fournisseurs')
+@login_required
+def index_fournisseurs():
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM fournisseurs')
+    fournisseurs = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('fournisseurs/index.html', fournisseurs=fournisseurs)
+
+@app.route('/fournisseurs/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_fournisseur():
+
+    if request.method == 'POST':
+        id_fournisseur = request.form['id_fournisseur']
+        nom_fournisseur = request.form['nom_fournisseur']
+        telephone = request.form['telephone']
+        email = request.form['email']
+        adresse = request.form['adresse']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO fournisseurs (id_fournisseur, nom_fournisseur, telephone, email, adresse)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (id_fournisseur, nom_fournisseur, telephone, email, adresse))
+            conn.commit()
+            flash('Fournisseur ajouté avec succès !', 'success')
+        except mysql.connector.Error as err:
+            flash(f"Erreur : {err}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        
+        return redirect(url_for('index_fournisseurs'))
+
+    return render_template('fournisseurs/ajouter.html')
+
+@app.route('/fournisseurs/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_fournisseur(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        nom_fournisseur = request.form['nom_fournisseur']
+        telephone = request.form['telephone']
+        email = request.form['email']
+        adresse = request.form['adresse']
+
+        cursor.execute('''
+            UPDATE fournisseurs
+            SET nom_fournisseur=%s, telephone=%s, email=%s, adresse=%s
+            WHERE id_fournisseur=%s
+        ''', (nom_fournisseur, telephone, email, adresse, id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Fournisseur modifié avec succès !', 'success')
+        return redirect(url_for('index_fournisseurs'))
+
+    cursor.execute('SELECT * FROM fournisseurs WHERE id_fournisseur = %s', (id,))
+    fournisseur = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if fournisseur is None:
+        return "Fournisseur non trouvé", 404
+        
+    return render_template('fournisseurs/modifier.html', fournisseur=fournisseur)
+
+@app.route('/fournisseurs/supprimer/<int:id>')
+@login_required
+def supprimer_fournisseur(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM fournisseurs WHERE id_fournisseur = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Fournisseur supprimé avec succès !', 'success')
+    return redirect(url_for('index_fournisseurs'))
+
+
+# --- ROUTES VENTES & FACTURES ---
+
+@app.route('/ventes')
+@login_required
+def index_ventes():
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('''
+        SELECT v.*, c.nom as nom_client, c.prenom as prenom_client 
+        FROM ventes v 
+        JOIN clients c ON v.id_client = c.id_client
+        ORDER BY v.date_vente DESC
+    ''')
+    ventes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('ventes/index.html', ventes=ventes)
+
+@app.route('/ventes/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_vente():
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        id_vente = request.form['id_vente']
+        id_client = request.form['id_client']
+        produits_ids = request.form.getlist('produits[]')
+        quantites = request.form.getlist('quantites[]')
+        
+        try:
+            # Démarrer une transaction
+            conn.start_transaction()
+            
+            total_vente = 0
+            # 1. Créer la vente
+            cursor.execute('INSERT INTO ventes (id_vente, id_client, total) VALUES (%s, %s, %s)', (id_vente, id_client, 0))
+
+            
+            # 2. Ajouter les lignes et calculer le total
+            for p_id, qty in zip(produits_ids, quantites):
+                if not p_id or not qty: continue
+                qty = int(qty)
+                
+                # Récupérer prix et stock
+                cursor.execute('SELECT prix_vente, quantite_stock FROM produits WHERE id_produit = %s', (p_id,))
+                prod = cursor.fetchone()
+                
+                if prod['quantite_stock'] < qty:
+                    raise Exception(f"Stock insuffisant pour le produit ID {p_id}")
+                
+                sous_total = prod['prix_vente'] * qty
+                total_vente += sous_total
+                
+                # Insérer ligne
+                cursor.execute('''
+                    INSERT INTO lignes_vente (id_vente, id_produit, quantite, prix_unitaire)
+                    VALUES (%s, %s, %s, %s)
+                ''', (id_vente, p_id, qty, prod['prix_vente']))
+                
+                # Mettre à jour le stock
+                cursor.execute('''
+                    UPDATE produits SET quantite_stock = quantite_stock - %s 
+                    WHERE id_produit = %s
+                ''', (qty, p_id))
+            
+            # 3. Mettre à jour le total de la vente
+            cursor.execute('UPDATE ventes SET total = %s WHERE id_vente = %s', (total_vente, id_vente))
+            
+            conn.commit()
+            flash('Vente enregistrée avec succès !', 'success')
+            return redirect(url_for('facture', id=id_vente))
+            
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur lors de la vente : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for('ajouter_vente'))
+
+    # GET
+    cursor.execute('SELECT * FROM clients')
+    clients = cursor.fetchall()
+    cursor.execute('SELECT * FROM produits WHERE quantite_stock > 0')
+    produits = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('ventes/ajouter.html', clients=clients, produits=produits)
+
+@app.route('/ventes/facture/<int:id>')
+@login_required
+def facture(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Récupérer les infos de la vente
+    cursor.execute('''
+        SELECT v.*, c.nom as nom_client, c.prenom as prenom_client, c.telephone, c.email, c.adresse
+        FROM ventes v 
+        JOIN clients c ON v.id_client = c.id_client
+        WHERE v.id_vente = %s
+    ''', (id,))
+    vente = cursor.fetchone()
+    
+    if not vente:
+        cursor.close()
+        conn.close()
+        return "Vente non trouvée", 404
+        
+    # Récupérer les lignes de la vente
+    cursor.execute('''
+        SELECT lv.*, p.nom_produit 
+        FROM lignes_vente lv
+        JOIN produits p ON lv.id_produit = p.id_produit
+        WHERE lv.id_vente = %s
+    ''', (id,))
+    lignes = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    return render_template('ventes/facture.html', vente=vente, lignes=lignes)
+
+
+@app.route('/rapports')
+@login_required
+def rapports():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # 1. Chiffre d'Affaire (CA)
+        cursor.execute('SELECT SUM(total) as ca FROM ventes')
+        res_ca = cursor.fetchone()
+        total_ventes = res_ca['ca'] if res_ca['ca'] else 0
+        
+        # 2. Coût des Achats (Basé sur les ventes - COGS)
+        cursor.execute('''
+            SELECT SUM(lv.quantite * p.prix_achat) as total_cout
+            FROM lignes_vente lv
+            JOIN produits p ON lv.id_produit = p.id_produit
+        ''')
+        res_cout = cursor.fetchone()
+        total_achats = res_cout['total_cout'] if res_cout['total_cout'] else 0
+        
+        # 3. Bénéfices
+        benefices = total_ventes - total_achats
+        
+        # 4. Liste des factures
+        cursor.execute('''
+            SELECT v.*, c.nom as nom_client, c.prenom as prenom_client 
+            FROM ventes v 
+            JOIN clients c ON v.id_client = c.id_client
+            ORDER BY v.date_vente DESC
+        ''')
+        factures = cursor.fetchall()
+        
+        stats = {
+            'total_ventes': total_ventes,
+            'total_achats': total_achats,
+            'benefices': benefices
+        }
+        
+        return render_template('rapports/index.html', stats=stats, factures=factures)
+        
+    except Exception as e:
+        flash(f"Erreur lors du calcul des rapports : {str(e)}", 'danger')
+        return redirect(url_for('index'))
+    finally:
+        cursor.close()
+        conn.close()
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

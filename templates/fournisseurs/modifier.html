@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Modifier le Fournisseur #{{ fournisseur.id_fournisseur }}</h2>
+        <form action="{{ url_for('modifier_fournisseur', id=fournisseur.id_fournisseur) }}" method="POST">
+            
+            <div class="form-group">
+                <label for="nom_fournisseur">Nom du Fournisseur</label>
+                <input type="text" name="nom_fournisseur" id="nom_fournisseur" value="{{ fournisseur.nom_fournisseur }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="telephone">Téléphone</label>
+                <input type="text" name="telephone" id="telephone" value="{{ fournisseur.telephone }}">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" name="email" id="email" value="{{ fournisseur.email }}">
+            </div>
+
+            <div class="form-group">
+                <label for="adresse">Adresse</label>
+                <textarea name="adresse" id="adresse" rows="3">{{ fournisseur.adresse }}</textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">Mettre à jour le Fournisseur</button>
+            <a href="{{ url_for('index_fournisseurs') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

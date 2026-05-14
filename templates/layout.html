@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Boutique</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="logo">ONGOIBA DISTRIBUTION</a>
+            {% if session.get('logged_in') %}
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">Produits</a></li>
+                <li><a href="{{ url_for('index_clients') }}">Clients</a></li>
+                <li><a href="{{ url_for('index_fournisseurs') }}">Fournisseurs</a></li>
+                <li><a href="{{ url_for('index_ventes') }}">Ventes</a></li>
+                <li><a href="{{ url_for('rapports') }}">Rapports</a></li>
+                <li style="border-left: 1px solid var(--glass-border); height: 24px; margin: 0 0.5rem;"></li>
+                <li><a href="{{ url_for('ajouter') }}" class="btn-add"
+                        style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">+ Produit</a></li>
+                <li><a href="{{ url_for('ajouter_vente') }}" class="btn-add"
+                        style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: var(--success);">+ Vente</a></li>
+                <li><a href="{{ url_for('logout') }}" class="btn-add"
+                        style="background: var(--danger); font-size: 0.85rem; padding: 0.5rem 0.8rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            style="margin-right: 0.4rem; vertical-align: middle;">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Déconnexion
+                    </a></li>
+            </ul>
+            {% endif %}
+
+
+        </div>
+    </nav>
+
+    <div class="container main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Gestion Boutique </p>
+    </footer>
+</body>
+
+</html>
