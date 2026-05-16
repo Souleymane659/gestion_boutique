@@ -6,6 +6,12 @@ from functools import wraps
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Secret
+
+
+
+app.secret_key = "iug2026"
+
 # --- AUTHENTICATION ---
 
 def login_required(f):
@@ -504,4 +510,4 @@ def rapports():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

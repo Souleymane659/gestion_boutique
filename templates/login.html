@@ -7,6 +7,13 @@
     <title>Connexion - Gestion Boutique</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Apply theme immediately to prevent flashing
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
     <style>
         body {
             display: flex;
@@ -32,10 +39,24 @@
                 transform: translateY(0);
             }
         }
+
+        .login-theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
     </style>
 </head>
 
 <body>
+    <div class="login-theme-toggle" style="display: flex; align-items: center; gap: 0.8rem;">
+        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Apparence</span>
+        <button id="themeToggle" class="theme-toggle" title="Passer au Mode Clair / Sombre">
+            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+
     <div class="login-card card">
         <div style="text-align: center; margin-bottom: 2rem;">
             <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Bienvenue</h1>
@@ -67,6 +88,19 @@
             &copy; 2026 ONGOIBA DISTRIBUTION
         </p>
     </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+    </script>
 </body>
 
 </html>

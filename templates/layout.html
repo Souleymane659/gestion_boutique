@@ -7,6 +7,13 @@
     <title>Gestion Boutique</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Apply theme immediately to prevent flashing
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 </head>
 
 <body>
@@ -20,11 +27,6 @@
                 <li><a href="{{ url_for('index_fournisseurs') }}">Fournisseurs</a></li>
                 <li><a href="{{ url_for('index_ventes') }}">Ventes</a></li>
                 <li><a href="{{ url_for('rapports') }}">Rapports</a></li>
-                <li style="border-left: 1px solid var(--glass-border); height: 24px; margin: 0 0.5rem;"></li>
-                <li><a href="{{ url_for('ajouter') }}" class="btn-add"
-                        style="padding: 0.5rem 0.8rem; font-size: 0.85rem;">+ Produit</a></li>
-                <li><a href="{{ url_for('ajouter_vente') }}" class="btn-add"
-                        style="padding: 0.5rem 0.8rem; font-size: 0.85rem; background: var(--success);">+ Vente</a></li>
                 <li><a href="{{ url_for('logout') }}" class="btn-add"
                         style="background: var(--danger); font-size: 0.85rem; padding: 0.5rem 0.8rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -39,7 +41,17 @@
             </ul>
             {% endif %}
 
-
+            <div style="display: flex; align-items: center; gap: 0.8rem; margin-left: 1.5rem;">
+                <span
+                    style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Apparence</span>
+                <button id="themeToggle" class="theme-toggle" title="Passer au Mode Clair / Sombre">
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -58,6 +70,19 @@
     <footer class="footer">
         <p>&copy; 2026 Gestion Boutique </p>
     </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+    </script>
 </body>
 
 </html>

@@ -12,10 +12,15 @@
             Ajouter un Produit
         </a>
     </div>
+    
+    <div class="search-container">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Rechercher par nom..." onkeyup="filterTable()">
+    </div>
 
 
     <div class="table-responsive">
-        <table>
+        <table id="productTable">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -57,4 +62,26 @@
         </table>
     </div>
 </div>
+
+<script>
+function filterTable() {
+    const input = document.getElementById("searchInput");
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById("productTable");
+    const tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+        // Index 1 est la colonne "Nom du Produit"
+        const td = tr[i].getElementsByTagName("td")[1];
+        if (td) {
+            const txtValue = td.textContent || td.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+}
+</script>
 {% endblock %}
