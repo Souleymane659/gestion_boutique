@@ -21,7 +21,7 @@
         <div class="container">
             <a href="{{ url_for('dashboard') }}" class="logo">ONGOIBA DISTRIBUTION</a>
             {% if session.get('logged_in') %}
-            <ul class="nav-links">
+            <ul class="nav-links" id="navLinks">
                 <li><a href="{{ url_for('dashboard') }}">Tableau de Bord</a></li>
                 <li><a href="{{ url_for('index_produits') }}">Produits</a></li>
                 <li><a href="{{ url_for('index_clients') }}">Clients</a></li>
@@ -45,9 +45,8 @@
             </ul>
             {% endif %}
 
-            <div style="display: flex; align-items: center; gap: 0.8rem; margin-left: 1.5rem;">
-                <span
-                    style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Apparence</span>
+            <div class="theme-and-menu" style="display: flex; align-items: center; gap: 0.8rem; margin-left: auto;">
+                <span class="theme-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Apparence</span>
                 <button id="themeToggle" class="theme-toggle" title="Passer au Mode Clair / Sombre">
                     <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -55,6 +54,11 @@
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                     </svg>
                 </button>
+                {% if session.get('logged_in') %}
+                <button class="menu-toggle" id="mobile-menu-btn" title="Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -84,6 +88,15 @@
 
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
+            });
+        }
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const navLinks = document.getElementById('navLinks');
+        if (mobileMenuBtn && navLinks) {
+            mobileMenuBtn.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
             });
         }
     </script>

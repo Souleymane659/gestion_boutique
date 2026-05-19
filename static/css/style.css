@@ -397,3 +397,82 @@ input:focus {
 }
 
 .sun-icon { display: none !important; } /* Only using moon icon as requested */
+
+/* --- RESPONSIVE DESIGN (MOBILE) --- */
+.menu-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .navbar .container {
+        flex-wrap: wrap;
+    }
+    
+    .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--glass-border);
+        align-items: stretch;
+    }
+    
+    .nav-links.active {
+        display: flex;
+    }
+    
+    .nav-links li {
+        width: 100%;
+    }
+    
+    .nav-links a {
+        display: block;
+        padding: 0.5rem 0;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+
+    .theme-and-menu {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Fix inline grids from HTML forms */
+    div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+    div[style*="grid-template-columns: 3fr 1fr 1.5fr 0.5fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem !important;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    h1, h2 {
+        font-size: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-submit, .btn-add {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+}
