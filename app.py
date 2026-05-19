@@ -48,7 +48,7 @@ def login():
         conn.close()
         
         # Authentification avec hachage
-        if user and check_password_hash(user['mot_de_passe'], password):
+        if user and check_password_hash(user['password'], password):
             session['logged_in'] = True
             session['username'] = user['username']
             session['role'] = user['role']
@@ -613,7 +613,7 @@ def ajouter_utilisateur():
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO utilisateurs (nom, username, mot_de_passe, role, boutique_id)
+                INSERT INTO utilisateurs (nom, username, password, role, boutique_id)
                 VALUES (%s, %s, %s, %s, %s)
             ''', (nom, username, hashed_password, role, session.get('user_id')))
             conn.commit()
@@ -650,7 +650,7 @@ def modifier_utilisateur(id):
             hashed_password = generate_password_hash(password)
             cursor.execute('''
                 UPDATE utilisateurs
-                SET nom=%s, username=%s, mot_de_passe=%s, role=%s
+                SET nom=%s, username=%s, password=%s, role=%s
                 WHERE id=%s AND boutique_id=%s
             ''', (nom, username, hashed_password, role, id, session.get('user_id')))
             
