@@ -5,10 +5,6 @@
     <div class="card">
         <h2>Ajouter un Nouveau Client</h2>
         <form action="{{ url_for('ajouter_client') }}" method="POST">
-            <div class="form-group">
-                <label for="id_client">ID Client (Manuel)</label>
-                <input type="number" name="id_client" id="id_client" placeholder="Ex: 1" required>
-            </div>
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                 <div class="form-group">

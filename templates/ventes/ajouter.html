@@ -4,11 +4,7 @@
 <div class="card">
     <h2>Effectuer une Nouvelle Vente</h2>
     <form action="{{ url_for('ajouter_vente') }}" method="POST" id="vente-form">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-                <label for="id_vente">N° de Facture (Manuel)</label>
-                <input type="number" name="id_vente" id="id_vente" placeholder="Ex: 1001" required>
-            </div>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
             <div class="form-group">
                 <label for="id_client">Client</label>
                 <select name="id_client" id="id_client" required style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">

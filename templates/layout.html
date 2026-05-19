@@ -19,14 +19,18 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="{{ url_for('index') }}" class="logo">ONGOIBA DISTRIBUTION</a>
+            <a href="{{ url_for('dashboard') }}" class="logo">ONGOIBA DISTRIBUTION</a>
             {% if session.get('logged_in') %}
             <ul class="nav-links">
-                <li><a href="{{ url_for('index') }}">Produits</a></li>
+                <li><a href="{{ url_for('dashboard') }}">Tableau de Bord</a></li>
+                <li><a href="{{ url_for('index_produits') }}">Produits</a></li>
                 <li><a href="{{ url_for('index_clients') }}">Clients</a></li>
                 <li><a href="{{ url_for('index_fournisseurs') }}">Fournisseurs</a></li>
                 <li><a href="{{ url_for('index_ventes') }}">Ventes</a></li>
                 <li><a href="{{ url_for('rapports') }}">Rapports</a></li>
+                {% if session.get('username') == 'Admin1' %}
+                <li><a href="{{ url_for('index_utilisateurs') }}">Utilisateurs</a></li>
+                {% endif %}
                 <li><a href="{{ url_for('logout') }}" class="btn-add"
                         style="background: var(--danger); font-size: 0.85rem; padding: 0.5rem 0.8rem;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"

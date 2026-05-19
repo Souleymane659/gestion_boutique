@@ -1,0 +1,34 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2 style="margin-bottom: 2rem;">Ajouter un Utilisateur</h2>
+
+    <form action="{{ url_for('ajouter_utilisateur') }}" method="POST">
+        <div class="form-group">
+            <label for="nom">Nom Complet</label>
+            <input type="text" name="nom" id="nom" required placeholder="Ex: Souleymane Ongoiba">
+        </div>
+        <div class="form-group">
+            <label for="username">Nom d'utilisateur</label>
+            <input type="text" name="username" id="username" required placeholder="Ex: Admin1">
+        </div>
+        <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input type="password" name="password" id="password" required placeholder="••••••••">
+        </div>
+        <div class="form-group">
+            <label for="role">Rôle</label>
+            <select name="role" id="role" required>
+                <option value="Caisier">Caisier</option>
+                <option value="Comptable">Comptable</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn-submit">Ajouter</button>
+            <a href="{{ url_for('index_utilisateurs') }}" class="btn-submit" style="background: var(--secondary); text-align: center; text-decoration: none;">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

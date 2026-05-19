@@ -93,68 +93,24 @@
             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
             <rect x="6" y="14" width="12" height="8"></rect>
         </svg>
-        Imprimer la Facture
+        Imprimer
     </button>
     <a href="{{ url_for('index_ventes') }}" class="btn-submit"
-        style="width: auto; background: var(--secondary); text-decoration: none;">Retour aux Ventes</a>
+        style="width: auto; background: var(--secondary); text-decoration: none;">Retour</a>
 </div>
 
 <style>
+    /* Styles pour l'impression normale */
     @media print {
-        body {
-            background: white !important;
-            color: black !important;
-        }
-
-        .navbar,
-        .footer,
-        .no-print,
-        .nav-links,
-        .btn-add {
-            display: none !important;
-        }
-
-        .main-content {
-            padding: 0 !important;
-        }
-
-        .card {
-            background: white !important;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-            color: black !important;
-        }
-
-        .invoice-container {
-            margin: 0 !important;
-            width: 100% !important;
-        }
-
-        * {
-            color: black !important;
-            text-shadow: none !important;
-        }
-
-        .invoice-table th {
-            border-bottom: 2px solid #333 !important;
-            color: black !important;
-        }
-
-        .invoice-table td {
-            border-bottom: 1px solid #eee !important;
-        }
-
-        .invoice-container {
-            background: white !important;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4 {
-            color: black !important;
-        }
+        body { background: white !important; color: black !important; }
+        .navbar, .footer, .no-print, .nav-links, .btn-add { display: none !important; }
+        .main-content { padding: 0 !important; }
+        .card { background: white !important; box-shadow: none !important; border: none !important; padding: 0 !important; color: black !important; }
+        .invoice-container { margin: 0 !important; width: 100% !important; }
+        * { color: black !important; text-shadow: none !important; }
+        .invoice-table th { border-bottom: 2px solid #333 !important; color: black !important; }
+        .invoice-table td { border-bottom: 1px solid #eee !important; }
+        h1, h2, h3, h4 { color: black !important; }
     }
 </style>
 {% endblock %}
