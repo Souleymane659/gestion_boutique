@@ -5,33 +5,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - Gestion Boutique</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <script>
-        // Apply theme immediately to prevent flashing
-        (function() {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        })();
-    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --background: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --input-bg: #111827;
         }
 
-        .login-card {
+        [data-theme="light"] {
+            --background: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --input-bg: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s ease;
+            padding: 20px;
+        }
+
+        .login-container {
             width: 100%;
-            max-width: 400px;
-            animation: fadeIn 0.8s ease-out;
+            max-width: 430px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.8s ease;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(25px);
             }
 
             to {
@@ -40,67 +72,301 @@
             }
         }
 
-        .login-theme-toggle {
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .logo p {
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 43px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-login.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+
+        .theme-toggle {
             position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 1000;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1.2rem;
+            transition: 0.4s;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .shake {
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
     </style>
+
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+
 </head>
 
 <body>
-    <div class="login-theme-toggle" style="display: flex; align-items: center; gap: 0.8rem;">
-        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Apparence</span>
-        <button id="themeToggle" class="theme-toggle" title="Passer au Mode Clair / Sombre">
-            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-        </button>
-    </div>
 
-    <div class="login-card card">
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <h1 style="color: var(--primary); margin-bottom: 0.5rem;">Bienvenue</h1>
-            <p style="color: var(--text-muted);">Connectez-vous pour accéder au système</p>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+
+    <div class="login-container" id="loginCard">
+
+        <div class="logo">
+            <h1>ONGOIBA DISTRIBUTION</h1>
+            <p>Gestion Boutique Multi-Utilisateurs</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
-        <div class="alert alert-{{ category }}" style="font-size: 0.85rem; padding: 0.75rem; margin-bottom: 1.5rem;">{{
-            message }}</div>
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
         {% endfor %}
         {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('login') }}" method="POST">
+        <form id="loginForm" action="{{ url_for('login') }}" method="POST" autocomplete="off">
+
+            <!-- Piège pour absorber la saisie automatique de Chrome / Edge -->
+            <input type="text" style="position: absolute; opacity: 0; top: -9999px;" tabindex="-1" autocomplete="username">
+            <input type="password" style="position: absolute; opacity: 0; top: -9999px;" tabindex="-1" autocomplete="current-password">
+
             <div class="form-group">
-                <label for="username">Nom d'utilisateur</label>
-                <input type="text" name="username" id="username" placeholder="Ex: admin" required autofocus>
+                <label>Nom d'utilisateur</label>
+
+                <input type="text" id="username" name="username" placeholder="Entrez votre nom" required
+                    autocomplete="off">
             </div>
+
             <div class="form-group">
-                <label for="password">Mot de passe</label>
-                <input type="password" name="password" id="password" placeholder="••••••••" required>
+                <label>Mot de passe</label>
+
+                <input type="password" id="password" name="password" placeholder="Entrez votre mot de passe" required
+                    autocomplete="new-password">
+
+                <span class="toggle-password" id="togglePassword">
+                    👁
+                </span>
             </div>
-            <button type="submit" class="btn-submit">Se Connecter</button>
+
+            <button type="submit" class="btn-login" id="loginBtn">
+                Se connecter
+            </button>
+
         </form>
 
-        <p style="text-align: center; margin-top: 2rem; font-size: 0.8rem; color: var(--text-muted);">
-            &copy; 2026 ONGOIBA DISTRIBUTION
-        </p>
+        <div class="footer">
+            © 2026 ONGOIBA DISTRIBUTION
+        </div>
+
     </div>
 
     <script>
-        const themeToggle = document.getElementById('themeToggle');
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-            });
-        }
+
+        // THEME TOGGLE
+
+        const themeBtn = document.getElementById('themeToggle');
+
+        themeBtn.addEventListener('click', () => {
+
+            const currentTheme =
+                document.documentElement.getAttribute('data-theme');
+
+            const newTheme =
+                currentTheme === 'dark' ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+
+            localStorage.setItem('theme', newTheme);
+
+            themeBtn.innerHTML =
+                newTheme === 'dark' ? '🌙' : '☀️';
+        });
+
+
+        // SHOW PASSWORD
+
+        const togglePassword =
+            document.getElementById('togglePassword');
+
+        const password =
+            document.getElementById('password');
+
+        togglePassword.addEventListener('click', () => {
+
+            if (password.type === 'password') {
+                password.type = 'text';
+                togglePassword.innerHTML = '🙈';
+            } else {
+                password.type = 'password';
+                togglePassword.innerHTML = '👁';
+            }
+        });
+
+
+        // LOGIN VALIDATION
+
+        const form =
+            document.getElementById('loginForm');
+
+        const loginBtn =
+            document.getElementById('loginBtn');
+
+        const loginCard =
+            document.getElementById('loginCard');
+
+        form.addEventListener('submit', function (e) {
+
+            const username =
+                document.getElementById('username').value.trim();
+
+            const pass =
+                password.value.trim();
+
+            if (username === '' || pass === '') {
+
+                e.preventDefault();
+
+                loginCard.classList.add('shake');
+
+                setTimeout(() => {
+                    loginCard.classList.remove('shake');
+                }, 500);
+
+                alert("Veuillez remplir tous les champs");
+
+                return;
+            }
+
+            loginBtn.innerHTML = "Connexion...";
+            loginBtn.classList.add('loading');
+        });
+
+
+        // AUTO FOCUS
+
+        window.onload = () => {
+            document.getElementById('username').focus();
+        };
+
     </script>
+
 </body>
 
 </html>
