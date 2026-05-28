@@ -21,7 +21,6 @@ if user:
     print(f"User found: {user['username']}")
     print(f"Role: {user['role']}")
     print(f"ID: {user['id']}")
-    print(f"Boutique ID: {user['boutique_id']}")
     
     # Test password verification
     if check_password_hash(user['password'], password):

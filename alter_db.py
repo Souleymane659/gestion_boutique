@@ -9,16 +9,7 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor()
 
-try:
-    cursor.execute("ALTER TABLE utilisateurs ADD boutique_id INT;")
-    print("Column boutique_id added.")
-except Exception as e:
-    print(f"Column might already exist: {e}")
-
-cursor.execute("UPDATE utilisateurs SET boutique_id = 1;")
-conn.commit()
-
-print("Utilisateurs updated with boutique_id = 1.")
+# boutique_id column removed - not needed as there is no boutiques table
 
 cursor.close()
 conn.close()

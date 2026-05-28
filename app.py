@@ -46,8 +46,8 @@ def admin1_required(f):
 def get_parametres():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
-    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (boutique_id,))
+    user_id = session.get('user_id')
+    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (user_id,))
     parametres = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -108,19 +108,19 @@ def get_db_connection():
 def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     # Statistiques
-    cursor.execute('SELECT COUNT(*) as nb_produits FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT COUNT(*) as nb_produits FROM produits WHERE user_id = %s', (user_id,))
     nb_produits = cursor.fetchone()['nb_produits']
     
-    cursor.execute('SELECT COUNT(*) as nb_clients FROM clients WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT COUNT(*) as nb_clients FROM clients WHERE user_id = %s', (user_id,))
     nb_clients = cursor.fetchone()['nb_clients']
     
-    cursor.execute('SELECT COUNT(*) as nb_fournisseurs FROM fournisseurs WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT COUNT(*) as nb_fournisseurs FROM fournisseurs WHERE user_id = %s', (user_id,))
     nb_fournisseurs = cursor.fetchone()['nb_fournisseurs']
     
-    cursor.execute('SELECT SUM(total) as ca FROM ventes WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT SUM(total) as ca FROM ventes WHERE user_id = %s', (user_id,))
     res_ca = cursor.fetchone()
     ca = res_ca['ca'] if res_ca['ca'] else 0
     
@@ -132,7 +132,7 @@ def dashboard():
         WHERE v.user_id = %s
         ORDER BY v.date_vente DESC
         LIMIT 5
-    ''', (boutique_id,))
+    ''', (user_id,))
     ventes_recentes = cursor.fetchall()
     
     cursor.close()
@@ -167,7 +167,7 @@ def ajouter():
         prix_achat = request.form['prix_achat']
         prix_vente = request.form['prix_vente']
         quantite_stock = request.form['quantite_stock']
-        boutique_id = session.get('user_id')
+        user_id = session.get('user_id')
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -175,7 +175,7 @@ def ajouter():
             cursor.execute('''
                 INSERT INTO produits (nom_produit, prix_achat, prix_vente, quantite_stock, user_id)
                 VALUES (%s, %s, %s, %s, %s)
-            ''', (nom_produit, prix_achat, prix_vente, quantite_stock, boutique_id))
+            ''', (nom_produit, prix_achat, prix_vente, quantite_stock, user_id))
             conn.commit()
             flash('Produit ajouté avec succès !', 'success')
         except mysql.connector.Error as err:
@@ -195,7 +195,7 @@ def modifier(id):
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         nom_produit = request.form['nom_produit']
@@ -207,14 +207,14 @@ def modifier(id):
             UPDATE produits
             SET nom_produit=%s, prix_achat=%s, prix_vente=%s, quantite_stock=%s
             WHERE id_produit=%s AND user_id=%s
-        ''', (nom_produit, prix_achat, prix_vente, quantite_stock, id, boutique_id))
+        ''', (nom_produit, prix_achat, prix_vente, quantite_stock, id, user_id))
         conn.commit()
         cursor.close()
         conn.close()
         flash('Produit modifié avec succès !', 'success')
         return redirect(url_for('index_produits'))
 
-    cursor.execute('SELECT * FROM produits WHERE id_produit = %s AND user_id = %s', (id, boutique_id))
+    cursor.execute('SELECT * FROM produits WHERE id_produit = %s AND user_id = %s', (id, user_id))
     produit = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -261,7 +261,7 @@ def ajouter_client():
         prenom = request.form['prenom']
         telephone = request.form['telephone']
         adresse = request.form['adresse']
-        boutique_id = session.get('user_id')
+        user_id = session.get('user_id')
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -269,7 +269,7 @@ def ajouter_client():
             cursor.execute('''
                 INSERT INTO clients (nom, prenom, telephone, adresse, user_id)
                 VALUES (%s, %s, %s, %s, %s)
-            ''', (nom, prenom, telephone, adresse, boutique_id))
+            ''', (nom, prenom, telephone, adresse, user_id))
             conn.commit()
             flash('Client ajouté avec succès !', 'success')
         except mysql.connector.Error as err:
@@ -288,7 +288,7 @@ def modifier_client(id):
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         nom = request.form['nom']
@@ -300,14 +300,14 @@ def modifier_client(id):
             UPDATE clients
             SET nom=%s, prenom=%s, telephone=%s, adresse=%s
             WHERE id_client=%s AND user_id=%s
-        ''', (nom, prenom, telephone, adresse, id, boutique_id))
+        ''', (nom, prenom, telephone, adresse, id, user_id))
         conn.commit()
         cursor.close()
         conn.close()
         flash('Client modifié avec succès !', 'success')
         return redirect(url_for('index_clients'))
 
-    cursor.execute('SELECT * FROM clients WHERE id_client = %s AND user_id = %s', (id, boutique_id))
+    cursor.execute('SELECT * FROM clients WHERE id_client = %s AND user_id = %s', (id, user_id))
     client = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -353,7 +353,7 @@ def ajouter_fournisseur():
         nom_fournisseur = request.form['nom_fournisseur']
         telephone = request.form['telephone']
         adresse = request.form['adresse']
-        boutique_id = session.get('user_id')
+        user_id = session.get('user_id')
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -361,7 +361,7 @@ def ajouter_fournisseur():
             cursor.execute('''
                 INSERT INTO fournisseurs (nom_fournisseur, telephone, adresse, user_id)
                 VALUES (%s, %s, %s, %s)
-            ''', (nom_fournisseur, telephone, adresse, boutique_id))
+            ''', (nom_fournisseur, telephone, adresse, user_id))
             conn.commit()
             flash('Fournisseur ajouté avec succès !', 'success')
         except mysql.connector.Error as err:
@@ -380,7 +380,7 @@ def modifier_fournisseur(id):
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         nom_fournisseur = request.form['nom_fournisseur']
@@ -391,14 +391,14 @@ def modifier_fournisseur(id):
             UPDATE fournisseurs
             SET nom_fournisseur=%s, telephone=%s, adresse=%s
             WHERE id_fournisseur=%s AND user_id=%s
-        ''', (nom_fournisseur, telephone, adresse, id, boutique_id))
+        ''', (nom_fournisseur, telephone, adresse, id, user_id))
         conn.commit()
         cursor.close()
         conn.close()
         flash('Fournisseur modifié avec succès !', 'success')
         return redirect(url_for('index_fournisseurs'))
 
-    cursor.execute('SELECT * FROM fournisseurs WHERE id_fournisseur = %s AND user_id = %s', (id, boutique_id))
+    cursor.execute('SELECT * FROM fournisseurs WHERE id_fournisseur = %s AND user_id = %s', (id, user_id))
     fournisseur = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -429,7 +429,7 @@ def supprimer_fournisseur(id):
 def index_stocks():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     cursor.execute('''
         SELECT s.*, p.nom_produit, p.prix_vente
@@ -437,7 +437,7 @@ def index_stocks():
         JOIN produits p ON s.id_produit = p.id_produit
         WHERE p.user_id = %s
         ORDER BY p.nom_produit
-    ''', (boutique_id,))
+    ''', (user_id,))
     stocks = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -448,7 +448,7 @@ def index_stocks():
 def ajouter_stock():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         id_produit = request.form['id_produit']
@@ -469,7 +469,7 @@ def ajouter_stock():
             cursor.close()
             conn.close()
     
-    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (user_id,))
     produits = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -480,7 +480,7 @@ def ajouter_stock():
 def ajouter_mouvement():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         id_produit = request.form['id_produit']
@@ -495,7 +495,7 @@ def ajouter_mouvement():
             cursor.execute('''
                 INSERT INTO mouvements_stock (id_produit, type_mouvement, quantite, description, user_id)
                 VALUES (%s, %s, %s, %s, %s)
-            ''', (id_produit, type_mouvement, quantite, description, boutique_id))
+            ''', (id_produit, type_mouvement, quantite, description, user_id))
             
             # Mettre à jour le stock
             if type_mouvement == 'ENTREE':
@@ -522,7 +522,7 @@ def ajouter_mouvement():
             conn.close()
     
     # GET
-    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (user_id,))
     produits = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -533,7 +533,7 @@ def ajouter_mouvement():
 def historique_stocks():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     cursor.execute('''
         SELECT m.*, p.nom_produit
@@ -542,7 +542,7 @@ def historique_stocks():
         WHERE p.user_id = %s
         ORDER BY m.date_mouvement DESC
         LIMIT 50
-    ''', (boutique_id,))
+    ''', (user_id,))
     mouvements = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -553,7 +553,7 @@ def historique_stocks():
 def modifier_mouvement(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         type_mouvement = request.form['type_mouvement']
@@ -604,7 +604,7 @@ def modifier_mouvement(id):
         FROM mouvements_stock m
         JOIN produits p ON m.id_produit = p.id_produit
         WHERE m.id_mouvement = %s AND p.user_id = %s
-    ''', (id, boutique_id))
+    ''', (id, user_id))
     mouvement = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -619,7 +619,7 @@ def modifier_mouvement(id):
 def supprimer_mouvement(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     try:
         conn.start_transaction()
@@ -630,7 +630,7 @@ def supprimer_mouvement(id):
             FROM mouvements_stock m
             JOIN produits p ON m.id_produit = p.id_produit
             WHERE m.id_mouvement = %s AND p.user_id = %s
-        ''', (id, boutique_id))
+        ''', (id, user_id))
         mouvement = cursor.fetchone()
         
         if mouvement:
@@ -659,7 +659,7 @@ def supprimer_mouvement(id):
 def modifier_stock(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         quantite = request.form['quantite']
@@ -681,7 +681,7 @@ def modifier_stock(id):
         FROM stocks s
         JOIN produits p ON s.id_produit = p.id_produit
         WHERE s.id_stock = %s AND p.user_id = %s
-    ''', (id, boutique_id))
+    ''', (id, user_id))
     stock = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -711,7 +711,7 @@ def supprimer_stock(id):
 def index_achats():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     cursor.execute('''
         SELECT a.*, f.nom_fournisseur
@@ -719,7 +719,7 @@ def index_achats():
         LEFT JOIN fournisseurs f ON a.id_fournisseur = f.id_fournisseur
         WHERE a.user_id = %s
         ORDER BY a.date_achat DESC
-    ''', (boutique_id,))
+    ''', (user_id,))
     achats = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -730,7 +730,7 @@ def index_achats():
 def ajouter_achat():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         id_fournisseur = request.form.get('id_fournisseur')
@@ -745,7 +745,7 @@ def ajouter_achat():
             cursor.execute('''
                 INSERT INTO achats (id_fournisseur, montant_total, user_id)
                 VALUES (%s, 0, %s)
-            ''', (id_fournisseur if id_fournisseur else None, boutique_id))
+            ''', (id_fournisseur if id_fournisseur else None, user_id))
             id_achat = cursor.lastrowid
             
             montant_total = 0
@@ -783,9 +783,9 @@ def ajouter_achat():
             cursor.close()
             conn.close()
     
-    cursor.execute('SELECT * FROM fournisseurs WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM fournisseurs WHERE user_id = %s', (user_id,))
     fournisseurs = cursor.fetchall()
-    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (user_id,))
     produits = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -796,7 +796,7 @@ def ajouter_achat():
 def modifier_achat(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         id_fournisseur = request.form.get('id_fournisseur')
@@ -859,15 +859,15 @@ def modifier_achat(id):
         FROM achats a
         LEFT JOIN fournisseurs f ON a.id_fournisseur = f.id_fournisseur
         WHERE a.id_achat = %s AND a.user_id = %s
-    ''', (id, boutique_id))
+    ''', (id, user_id))
     achat = cursor.fetchone()
     
     cursor.execute('SELECT * FROM lignes_achat WHERE id_achat = %s', (id,))
     lignes = cursor.fetchall()
     
-    cursor.execute('SELECT * FROM fournisseurs WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM fournisseurs WHERE user_id = %s', (user_id,))
     fournisseurs = cursor.fetchall()
-    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (user_id,))
     produits = cursor.fetchall()
     
     cursor.close()
@@ -883,7 +883,7 @@ def modifier_achat(id):
 def supprimer_achat(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     try:
         conn.start_transaction()
@@ -919,13 +919,13 @@ def supprimer_achat(id):
 def index_depenses():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     cursor.execute('''
         SELECT * FROM depenses
         WHERE user_id = %s
         ORDER BY date_depense DESC
-    ''', (boutique_id,))
+    ''', (user_id,))
     depenses = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -938,14 +938,14 @@ def ajouter_depense():
         libelle = request.form['libelle']
         montant = request.form['montant']
         description = request.form.get('description', '')
-        boutique_id = session.get('user_id')
+        user_id = session.get('user_id')
         
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO depenses (libelle, montant, description, user_id)
             VALUES (%s, %s, %s, %s)
-        ''', (libelle, montant, description, boutique_id))
+        ''', (libelle, montant, description, user_id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -959,7 +959,7 @@ def ajouter_depense():
 def modifier_depense(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         libelle = request.form['libelle']
@@ -970,14 +970,14 @@ def modifier_depense(id):
             UPDATE depenses
             SET libelle=%s, montant=%s, description=%s
             WHERE id_depense=%s AND user_id=%s
-        ''', (libelle, montant, description, id, boutique_id))
+        ''', (libelle, montant, description, id, user_id))
         conn.commit()
         cursor.close()
         conn.close()
         flash('Dépense modifiée avec succès !', 'success')
         return redirect(url_for('index_depenses'))
     
-    cursor.execute('SELECT * FROM depenses WHERE id_depense = %s AND user_id = %s', (id, boutique_id))
+    cursor.execute('SELECT * FROM depenses WHERE id_depense = %s AND user_id = %s', (id, user_id))
     depense = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -992,9 +992,9 @@ def modifier_depense(id):
 def supprimer_depense(id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
-    cursor.execute('DELETE FROM depenses WHERE id_depense = %s AND user_id = %s', (id, boutique_id))
+    cursor.execute('DELETE FROM depenses WHERE id_depense = %s AND user_id = %s', (id, user_id))
     conn.commit()
     cursor.close()
     conn.close()
@@ -1009,7 +1009,7 @@ def supprimer_depense(id):
 def index_factures():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     try:
         cursor.execute('''
@@ -1018,7 +1018,7 @@ def index_factures():
             LEFT JOIN clients c ON f.id_client = c.id_client
             WHERE f.user_id = %s
             ORDER BY f.date_facture DESC
-        ''', (boutique_id,))
+        ''', (user_id,))
         factures = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -1034,7 +1034,7 @@ def index_factures():
 def ajouter_facture():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         id_client = request.form.get('id_client')
@@ -1057,7 +1057,7 @@ def ajouter_facture():
             cursor.execute('''
                 INSERT INTO factures (numero_facture, id_client, montant_total, statut, user_id)
                 VALUES (%s, %s, 0, %s, %s)
-            ''', (numero_facture, id_client if id_client else None, statut, boutique_id))
+            ''', (numero_facture, id_client if id_client else None, statut, user_id))
             id_facture = cursor.lastrowid
             
             montant_total = 0
@@ -1091,9 +1091,9 @@ def ajouter_facture():
             cursor.close()
             conn.close()
     
-    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (user_id,))
     clients = cursor.fetchall()
-    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (user_id,))
     produits = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -1104,7 +1104,7 @@ def ajouter_facture():
 def modifier_facture(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         id_client = request.form.get('id_client')
@@ -1164,15 +1164,15 @@ def modifier_facture(id):
         FROM factures f
         LEFT JOIN clients c ON f.id_client = c.id_client
         WHERE f.id_facture = %s AND f.user_id = %s
-    ''', (id, boutique_id))
+    ''', (id, user_id))
     facture = cursor.fetchone()
     
     cursor.execute('SELECT * FROM lignes_facture WHERE id_facture = %s', (id,))
     lignes = cursor.fetchall()
     
-    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (user_id,))
     clients = cursor.fetchall()
-    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (user_id,))
     produits = cursor.fetchall()
     
     cursor.close()
@@ -1188,7 +1188,7 @@ def modifier_facture(id):
 def supprimer_facture(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     try:
         conn.start_transaction()
@@ -1221,14 +1221,14 @@ def supprimer_facture(id):
 def pdf_facture(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     cursor.execute('''
         SELECT f.*, CONCAT(c.nom, ' ', c.prenom) as nom_client, c.telephone, c.adresse
         FROM factures f
         LEFT JOIN clients c ON f.id_client = c.id_client
         WHERE f.id_facture = %s AND f.user_id = %s
-    ''', (id, boutique_id))
+    ''', (id, user_id))
     facture = cursor.fetchone()
     
     cursor.execute('''
@@ -1255,7 +1255,7 @@ def pdf_facture(id):
 def parametres():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     if request.method == 'POST':
         nom_boutique = request.form.get('nom_boutique')
@@ -1284,7 +1284,7 @@ def parametres():
                 logo = f"/static/uploads/{filename}"
         
         try:
-            cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (boutique_id,))
+            cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (user_id,))
             parametres = cursor.fetchone()
             
             if parametres:
@@ -1294,12 +1294,12 @@ def parametres():
                     UPDATE parametres 
                     SET nom_boutique = %s, logo = %s, telephone = %s, email = %s, adresse = %s, devise = %s, slogan = %s
                     WHERE user_id = %s
-                ''', (nom_boutique, logo_to_save, telephone, email, adresse, devise, slogan, boutique_id))
+                ''', (nom_boutique, logo_to_save, telephone, email, adresse, devise, slogan, user_id))
             else:
                 cursor.execute('''
                     INSERT INTO parametres (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (nom_boutique, logo, telephone, email, adresse, devise, slogan, boutique_id))
+                ''', (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id))
             
             conn.commit()
             flash('Paramètres mis à jour avec succès !', 'success')
@@ -1311,7 +1311,7 @@ def parametres():
             conn.close()
         return redirect(url_for('parametres'))
     
-    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (user_id,))
     parametres = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -1327,14 +1327,14 @@ def index_ventes():
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     cursor.execute('''
         SELECT v.*, c.nom as nom_client, c.prenom as prenom_client 
         FROM ventes v 
         JOIN clients c ON v.id_client = c.id_client
         WHERE v.user_id = %s
         ORDER BY v.date_vente DESC
-    ''', (boutique_id,))
+    ''', (user_id,))
     ventes = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -1346,7 +1346,7 @@ def ajouter_vente():
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
 
     if request.method == 'POST':
         id_client = request.form['id_client']
@@ -1359,7 +1359,7 @@ def ajouter_vente():
             
             total_vente = 0
             # 1. Créer la vente avec AUTO_INCREMENT
-            cursor.execute('INSERT INTO ventes (id_client, total, user_id) VALUES (%s, %s, %s)', (id_client, 0, boutique_id))
+            cursor.execute('INSERT INTO ventes (id_client, total, user_id) VALUES (%s, %s, %s)', (id_client, 0, user_id))
             id_vente = cursor.lastrowid
 
             
@@ -1388,10 +1388,10 @@ def ajouter_vente():
                 cursor.execute('''
                     UPDATE produits SET quantite_stock = quantite_stock - %s 
                     WHERE id_produit = %s AND user_id = %s
-                ''', (qty, p_id, boutique_id))
+                ''', (qty, p_id, user_id))
             
             # 3. Mettre à jour le total de la vente
-            cursor.execute('UPDATE ventes SET total = %s WHERE id_vente = %s AND user_id = %s', (total_vente, id_vente, boutique_id))
+            cursor.execute('UPDATE ventes SET total = %s WHERE id_vente = %s AND user_id = %s', (total_vente, id_vente, user_id))
             
             conn.commit()
             flash('Vente enregistrée avec succès !', 'success')
@@ -1406,9 +1406,9 @@ def ajouter_vente():
         return redirect(url_for('ajouter_vente'))
 
     # GET
-    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (user_id,))
     clients = cursor.fetchall()
-    cursor.execute('SELECT * FROM produits WHERE quantite_stock > 0 AND user_id = %s', (boutique_id,))
+    cursor.execute('SELECT * FROM produits WHERE quantite_stock > 0 AND user_id = %s', (user_id,))
     produits = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -1420,7 +1420,7 @@ def facture(id):
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     # Récupérer les infos de la vente
     cursor.execute('''
@@ -1428,7 +1428,7 @@ def facture(id):
         FROM ventes v 
         JOIN clients c ON v.id_client = c.id_client
         WHERE v.id_vente = %s AND v.user_id = %s
-    ''', (id, boutique_id))
+    ''', (id, user_id))
     vente = cursor.fetchone()
     
     if not vente:
@@ -1455,11 +1455,11 @@ def facture(id):
 def rapports():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    boutique_id = session.get('user_id')
+    user_id = session.get('user_id')
     
     try:
         # 1. Chiffre d'Affaire (CA)
-        cursor.execute('SELECT SUM(total) as ca FROM ventes WHERE user_id = %s', (boutique_id,))
+        cursor.execute('SELECT SUM(total) as ca FROM ventes WHERE user_id = %s', (user_id,))
         res_ca = cursor.fetchone()
         total_ventes = res_ca['ca'] if res_ca['ca'] else 0
         
@@ -1470,7 +1470,7 @@ def rapports():
             JOIN produits p ON lv.id_produit = p.id_produit
             JOIN ventes v ON lv.id_vente = v.id_vente
             WHERE v.user_id = %s
-        ''', (boutique_id,))
+        ''', (user_id,))
         res_cout = cursor.fetchone()
         total_achats = res_cout['total_cout'] if res_cout['total_cout'] else 0
         
@@ -1484,7 +1484,7 @@ def rapports():
             JOIN clients c ON v.id_client = c.id_client
             WHERE v.user_id = %s
             ORDER BY v.date_vente DESC
-        ''', (boutique_id,))
+        ''', (user_id,))
         factures = cursor.fetchall()
         
         stats = {
@@ -1510,7 +1510,7 @@ def rapports():
 def index_utilisateurs():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT id, nom, username, role FROM utilisateurs WHERE boutique_id = %s', (session.get('user_id'),))
+    cursor.execute('SELECT id, nom, username, role FROM utilisateurs')
     utilisateurs = cursor.fetchall()
     cursor.close()
     conn.close()
@@ -1531,9 +1531,9 @@ def ajouter_utilisateur():
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO utilisateurs (nom, username, password, role, boutique_id)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (nom, username, hashed_password, role, session.get('user_id')))
+                INSERT INTO utilisateurs (nom, username, password, role)
+                VALUES (%s, %s, %s, %s)
+            ''', (nom, username, hashed_password, role))
             conn.commit()
             flash('Utilisateur ajouté avec succès !', 'success')
         except mysql.connector.Error as err:
@@ -1562,15 +1562,15 @@ def modifier_utilisateur(id):
             cursor.execute('''
                 UPDATE utilisateurs
                 SET nom=%s, username=%s, role=%s
-                WHERE id=%s AND boutique_id=%s
-            ''', (nom, username, role, id, session.get('user_id')))
+                WHERE id=%s
+            ''', (nom, username, role, id))
         else:
             hashed_password = generate_password_hash(password)
             cursor.execute('''
                 UPDATE utilisateurs
                 SET nom=%s, username=%s, password=%s, role=%s
-                WHERE id=%s AND boutique_id=%s
-            ''', (nom, username, hashed_password, role, id, session.get('user_id')))
+                WHERE id=%s
+            ''', (nom, username, hashed_password, role, id))
             
         conn.commit()
         cursor.close()
@@ -1578,7 +1578,7 @@ def modifier_utilisateur(id):
         flash('Utilisateur modifié avec succès !', 'success')
         return redirect(url_for('index_utilisateurs'))
 
-    cursor.execute('SELECT id, nom, username, role FROM utilisateurs WHERE id = %s AND boutique_id = %s', (id, session.get('user_id')))
+    cursor.execute('SELECT id, nom, username, role FROM utilisateurs WHERE id = %s', (id,))
     utilisateur = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -1598,7 +1598,7 @@ def supprimer_utilisateur(id):
         
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM utilisateurs WHERE id = %s AND boutique_id = %s', (id, session.get('user_id')))
+    cursor.execute('DELETE FROM utilisateurs WHERE id = %s', (id,))
     conn.commit()
     cursor.close()
     conn.close()
