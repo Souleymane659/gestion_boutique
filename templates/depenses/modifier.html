@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Modifier la Dépense</h2>
+        <form action="{{ url_for('modifier_depense', id=depense.id_depense) }}" method="POST">
+            
+            <div class="form-group">
+                <label for="libelle">Libellé</label>
+                <input type="text" name="libelle" id="libelle" value="{{ depense.libelle }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="montant">Montant (FCFA)</label>
+                <input type="number" name="montant" id="montant" min="0" step="0.01" value="{{ depense.montant }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optionnel)</label>
+                <textarea name="description" id="description" rows="3">{{ depense.description or '' }}</textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">Mettre à jour la Dépense</button>
+            <a href="{{ url_for('index_depenses') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    textarea {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        color: var(--text-main);
+        font-family: inherit;
+        transition: all 0.3s;
+        resize: vertical;
+    }
+    
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endblock %}

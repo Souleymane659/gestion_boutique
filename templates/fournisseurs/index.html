@@ -26,7 +26,6 @@
                     <th>ID</th>
                     <th>Nom du Fournisseur</th>
                     <th>Téléphone</th>
-                    <th>Email</th>
                     <th>Adresse</th>
                     <th>Actions</th>
                 </tr>
@@ -37,7 +36,6 @@
                     <td>#{{ fournisseur.id_fournisseur }}</td>
                     <td style="font-weight: 600;">{{ fournisseur.nom_fournisseur }}</td>
                     <td>{{ fournisseur.telephone }}</td>
-                    <td>{{ fournisseur.email }}</td>
                     <td>{{ fournisseur.adresse }}</td>
                     <td class="actions">
                         <a href="{{ url_for('modifier_fournisseur', id=fournisseur.id_fournisseur) }}" class="btn-icon btn-edit" title="Modifier">
@@ -51,7 +49,7 @@
                 {% endfor %}
                 {% if not fournisseurs %}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
                         Aucun fournisseur enregistré. <a href="{{ url_for('ajouter_fournisseur') }}" style="color: var(--primary);">Ajouter un fournisseur</a>
                     </td>
                 </tr>

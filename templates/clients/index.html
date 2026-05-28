@@ -26,7 +26,6 @@
                     <th>ID</th>
                     <th>Nom & Prénom</th>
                     <th>Téléphone</th>
-                    <th>Email</th>
                     <th>Adresse</th>
                     <th>Actions</th>
                 </tr>
@@ -37,7 +36,6 @@
                     <td>#{{ client.id_client }}</td>
                     <td style="font-weight: 600;">{{ client.nom }} {{ client.prenom }}</td>
                     <td>{{ client.telephone }}</td>
-                    <td>{{ client.email }}</td>
                     <td>{{ client.adresse }}</td>
                     <td class="actions">
                         <a href="{{ url_for('modifier_client', id=client.id_client) }}" class="btn-icon btn-edit" title="Modifier">
@@ -51,7 +49,7 @@
                 {% endfor %}
                 {% if not clients %}
                 <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
                         Aucun client enregistré. <a href="{{ url_for('ajouter_client') }}" style="color: var(--primary);">Ajouter un client</a>
                     </td>
                 </tr>

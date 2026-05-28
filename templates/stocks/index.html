@@ -1,0 +1,99 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2>Gestion des Stocks</h2>
+            <span class="badge badge-stock">{{ stocks|length }} Produits</span>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('ajouter_stock') }}" class="btn-add">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Ajouter un Stock
+            </a>
+            <a href="{{ url_for('ajouter_mouvement') }}" class="btn-add" style="background: #e67e22;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Mouvement de Stock
+            </a>
+            <a href="{{ url_for('historique_stocks') }}" class="btn-add" style="background: var(--secondary);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Historique
+            </a>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchStockInput" class="search-input" placeholder="Rechercher un produit..." onkeyup="filterStocks()">
+    </div>
+
+    <div class="table-responsive">
+        <table id="stockTable">
+            <thead>
+                <tr>
+                    <th>Produit</th>
+                    <th>Quantité</th>
+                    <th>Stock Minimum</th>
+                    <th>État</th>
+                    <th>Dernière Mise à Jour</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td style="font-weight: 600;">{{ stock.nom_produit }}</td>
+                    <td>{{ stock.quantite }}</td>
+                    <td>{{ stock.stock_minimum }}</td>
+                    <td>
+                        {% if stock.quantite <= stock.stock_minimum %}
+                            <span style="color: var(--danger); font-weight: 700;">Stock Bas</span>
+                        {% else %}
+                            <span style="color: var(--success); font-weight: 700;">OK</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ stock.derniere_mise_a_jour.strftime('%d/%m/%Y %H:%M') if stock.derniere_mise_a_jour else 'N/A' }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('modifier_stock', id=stock.id_stock) }}" class="btn-icon btn-edit" title="Modifier">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </a>
+                        <a href="{{ url_for('supprimer_stock', id=stock.id_stock) }}" class="btn-icon btn-delete" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce stock ?')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not stocks %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                        Aucun stock enregistré.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterStocks() {
+    const input = document.getElementById("searchStockInput");
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById("stockTable");
+    const tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+        const td = tr[i].getElementsByTagName("td")[0];
+        if (td) {
+            const txtValue = td.textContent || td.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

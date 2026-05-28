@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Modifier le Mouvement - {{ mouvement.nom_produit }}</h2>
+        <form action="{{ url_for('modifier_mouvement', id=mouvement.id_mouvement) }}" method="POST">
+            
+            <div class="form-group">
+                <label for="type_mouvement">Type de Mouvement</label>
+                <select name="type_mouvement" id="type_mouvement" required>
+                    <option value="ENTREE" {% if mouvement.type_mouvement == 'ENTREE' %}selected{% endif %}>Entrée (Réception)</option>
+                    <option value="SORTIE" {% if mouvement.type_mouvement == 'SORTIE' %}selected{% endif %}>Sortie (Vente/Perte)</option>
+                    <option value="AJUSTEMENT" {% if mouvement.type_mouvement == 'AJUSTEMENT' %}selected{% endif %}>Ajustement (Correction)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quantite">Quantité</label>
+                <input type="number" name="quantite" id="quantite" min="1" value="{{ mouvement.quantite }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optionnel)</label>
+                <textarea name="description" id="description" rows="3" placeholder="Description du mouvement...">{{ mouvement.description or '' }}</textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">Mettre à jour le Mouvement</button>
+            <a href="{{ url_for('historique_stocks') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    select {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        color: var(--text-main);
+        font-family: inherit;
+        transition: all 0.3s;
+    }
+    
+    select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    
+    textarea {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        color: var(--text-main);
+        font-family: inherit;
+        transition: all 0.3s;
+        resize: vertical;
+    }
+    
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endblock %}

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion Boutique</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=1.0.2">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script>
         // Apply theme immediately to prevent flashing
@@ -17,53 +17,160 @@
 </head>
 
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <a href="{{ url_for('dashboard') }}" class="logo">ONGOIBA DISTRIBUTION</a>
-            {% if session.get('logged_in') %}
-            <ul class="nav-links" id="navLinks">
-                <li><a href="{{ url_for('dashboard') }}">Tableau de Bord</a></li>
-                <li><a href="{{ url_for('index_produits') }}">Produits</a></li>
-                <li><a href="{{ url_for('index_clients') }}">Clients</a></li>
-                <li><a href="{{ url_for('index_fournisseurs') }}">Fournisseurs</a></li>
-                <li><a href="{{ url_for('index_ventes') }}">Ventes</a></li>
-                <li><a href="{{ url_for('rapports') }}">Rapports</a></li>
-                {% if session.get('username') == 'Admin1' %}
-                <li><a href="{{ url_for('index_utilisateurs') }}">Utilisateurs</a></li>
+    {% if session.get('logged_in') %}
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                {% set parametres = get_parametres() %}
+                {% if parametres and parametres.nom_boutique %}
+                    {{ parametres.nom_boutique }}
+                {% else %}
+                    Sadio<br>Distribution
                 {% endif %}
-                <li><a href="{{ url_for('logout') }}" class="btn-add"
-                        style="background: var(--danger); font-size: 0.85rem; padding: 0.5rem 0.8rem;">
+            </div>
+            <ul class="sidebar-menu">
+                <li class="{% if request.endpoint == 'index_clients' or 'client' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_clients') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                        </svg>
+                        Clients
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_produits' or 'produit' in request.endpoint or request.endpoint == 'ajouter' or request.endpoint == 'modifier' %}active{% endif %}">
+                    <a href="{{ url_for('index_produits') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 12H9v-2h6v2zm5-5H4V8h16v3z"/>
+                        </svg>
+                        Produits
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_ventes' or 'vente' in request.endpoint or request.endpoint == 'facture' %}active{% endif %}">
+                    <a href="{{ url_for('index_ventes') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.9 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                        Ventes
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_fournisseurs' or 'fournisseur' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_fournisseurs') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                        </svg>
+                        Fournisseurs
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_stocks' or 'stock' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_stocks') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z"/>
+                        </svg>
+                        Stocks
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_achats' or 'achat' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_achats') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.9 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                        Achats
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_depenses' or 'depense' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_depenses') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                        Dépenses
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_factures' or 'facture' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_factures') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                        </svg>
+                        Factures
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'rapports' %}active{% endif %}">
+                    <a href="{{ url_for('rapports') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.9 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+                        </svg>
+                        Rapport Vente
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'parametres' %}active{% endif %}">
+                    <a href="{{ url_for('parametres') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        </svg>
+                        Paramètres
+                    </a>
+                </li>
+                {% if session.get('username') == 'Admin1' %}
+                <li class="{% if request.endpoint == 'index_utilisateurs' or 'utilisateur' in request.endpoint %}active{% endif %}">
+                    <a href="{{ url_for('index_utilisateurs') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                        Utilisateurs
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-info">
+                    <h1>Bienvenue, {{ session.get('username') }} 👋</h1>
+                    <p>Rôle : <strong>{{ 'ADMIN' if session.get('username') == 'Admin1' else 'UTILISATEUR' }}</strong></p>
+                </div>
+                <div class="header-actions">
+                    <button id="themeToggle" class="theme-toggle" title="Passer au Mode Clair / Sombre">
+                        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            style="margin-right: 0.4rem; vertical-align: middle;">
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg>
                         Déconnexion
-                    </a></li>
-            </ul>
-            {% endif %}
+                    </a>
+                </div>
+            </header>
 
-            <div class="theme-and-menu" style="display: flex; align-items: center; gap: 0.8rem; margin-left: auto;">
-                <span class="theme-label" style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Apparence</span>
-                <button id="themeToggle" class="theme-toggle" title="Passer au Mode Clair / Sombre">
-                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                </button>
-                {% if session.get('logged_in') %}
-                <button class="menu-toggle" id="mobile-menu-btn" title="Menu">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                </button>
+            <!-- Content -->
+            <main class="content-area">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
                 {% endif %}
-            </div>
-        </div>
-    </nav>
+                {% endwith %}
 
-    <div class="container main-content">
+                {% block content %}{% endblock %}
+
+                <footer class="footer" style="margin-top: 3rem; text-align: center;">
+                    <p>&copy; 2026 Gestion Boutique</p>
+                </footer>
+            </main>
+        </div>
+    </div>
+    {% else %}
+    <div class="container main-content" style="max-width: 600px; margin-top: 10vh;">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
@@ -72,12 +179,9 @@
         {% endif %}
         {% endwith %}
 
-        {% block content %}{% endblock %}
+        {% block auth_content %}{% endblock %}
     </div>
-
-    <footer class="footer">
-        <p>&copy; 2026 Gestion Boutique </p>
-    </footer>
+    {% endif %}
 
     <script>
         const themeToggle = document.getElementById('themeToggle');
@@ -88,15 +192,6 @@
 
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
-            });
-        }
-
-        // Mobile Menu Toggle
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const navLinks = document.getElementById('navLinks');
-        if (mobileMenuBtn && navLinks) {
-            mobileMenuBtn.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
             });
         }
     </script>

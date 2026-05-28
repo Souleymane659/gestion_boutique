@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Ajouter un Nouveau Stock</h2>
+        <form action="{{ url_for('ajouter_stock') }}" method="POST">
+            
+            <div class="form-group">
+                <label for="id_produit">Produit</label>
+                <select name="id_produit" id="id_produit" required>
+                    <option value="">Sélectionner un produit</option>
+                    {% for produit in produits %}
+                    <option value="{{ produit.id_produit }}">{{ produit.nom_produit }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quantite">Quantité Initiale</label>
+                <input type="number" name="quantite" id="quantite" min="0" value="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="stock_minimum">Stock Minimum</label>
+                <input type="number" name="stock_minimum" id="stock_minimum" min="0" value="5" required>
+            </div>
+
+            <button type="submit" class="btn-submit">Ajouter le Stock</button>
+            <a href="{{ url_for('index_stocks') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    select {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        color: var(--text-main);
+        font-family: inherit;
+        transition: all 0.3s;
+    }
+    
+    select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endblock %}

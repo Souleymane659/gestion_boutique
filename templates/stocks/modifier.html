@@ -1,0 +1,24 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Modifier le Stock - {{ stock.nom_produit }}</h2>
+        <form action="{{ url_for('modifier_stock', id=stock.id_stock) }}" method="POST">
+            
+            <div class="form-group">
+                <label for="quantite">Quantité Actuelle</label>
+                <input type="number" name="quantite" id="quantite" value="{{ stock.quantite }}" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="stock_minimum">Stock Minimum</label>
+                <input type="number" name="stock_minimum" id="stock_minimum" value="{{ stock.stock_minimum }}" min="0" required>
+            </div>
+
+            <button type="submit" class="btn-submit">Mettre à jour le Stock</button>
+            <a href="{{ url_for('index_stocks') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

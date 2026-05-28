@@ -3,6 +3,8 @@ import mysql.connector
 from config import Config
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -12,6 +14,14 @@ app.config.from_object(Config)
 
 
 app.secret_key = "iug2026"
+
+# Configuration pour l'upload de fichiers
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- AUTHENTICATION ---
 
@@ -29,10 +39,25 @@ def admin1_required(f):
         if 'logged_in' not in session:
             return redirect(url_for('login'))
         if session.get('username') != 'Admin1':
-            flash("Vous n'avez pas l'autorisation d'accéder à cette page.", "danger")
             return redirect(url_for('dashboard'))
         return f(*args, **kwargs)
     return decorated_function
+
+def get_parametres():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (boutique_id,))
+    parametres = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return parametres
+
+@app.context_processor
+def inject_parametres():
+    if 'logged_in' in session:
+        return dict(get_parametres=get_parametres)
+    return dict(get_parametres=lambda: None)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -235,7 +260,6 @@ def ajouter_client():
         nom = request.form['nom']
         prenom = request.form['prenom']
         telephone = request.form['telephone']
-        email = request.form['email']
         adresse = request.form['adresse']
         boutique_id = session.get('user_id')
 
@@ -243,9 +267,9 @@ def ajouter_client():
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO clients (nom, prenom, telephone, email, adresse, user_id)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (nom, prenom, telephone, email, adresse, boutique_id))
+                INSERT INTO clients (nom, prenom, telephone, adresse, user_id)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (nom, prenom, telephone, adresse, boutique_id))
             conn.commit()
             flash('Client ajouté avec succès !', 'success')
         except mysql.connector.Error as err:
@@ -270,14 +294,13 @@ def modifier_client(id):
         nom = request.form['nom']
         prenom = request.form['prenom']
         telephone = request.form['telephone']
-        email = request.form['email']
         adresse = request.form['adresse']
 
         cursor.execute('''
             UPDATE clients
-            SET nom=%s, prenom=%s, telephone=%s, email=%s, adresse=%s
+            SET nom=%s, prenom=%s, telephone=%s, adresse=%s
             WHERE id_client=%s AND user_id=%s
-        ''', (nom, prenom, telephone, email, adresse, id, boutique_id))
+        ''', (nom, prenom, telephone, adresse, id, boutique_id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -329,7 +352,6 @@ def ajouter_fournisseur():
     if request.method == 'POST':
         nom_fournisseur = request.form['nom_fournisseur']
         telephone = request.form['telephone']
-        email = request.form['email']
         adresse = request.form['adresse']
         boutique_id = session.get('user_id')
 
@@ -337,9 +359,9 @@ def ajouter_fournisseur():
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO fournisseurs (nom_fournisseur, telephone, email, adresse, user_id)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (nom_fournisseur, telephone, email, adresse, boutique_id))
+                INSERT INTO fournisseurs (nom_fournisseur, telephone, adresse, user_id)
+                VALUES (%s, %s, %s, %s)
+            ''', (nom_fournisseur, telephone, adresse, boutique_id))
             conn.commit()
             flash('Fournisseur ajouté avec succès !', 'success')
         except mysql.connector.Error as err:
@@ -363,14 +385,13 @@ def modifier_fournisseur(id):
     if request.method == 'POST':
         nom_fournisseur = request.form['nom_fournisseur']
         telephone = request.form['telephone']
-        email = request.form['email']
         adresse = request.form['adresse']
 
         cursor.execute('''
             UPDATE fournisseurs
-            SET nom_fournisseur=%s, telephone=%s, email=%s, adresse=%s
+            SET nom_fournisseur=%s, telephone=%s, adresse=%s
             WHERE id_fournisseur=%s AND user_id=%s
-        ''', (nom_fournisseur, telephone, email, adresse, id, boutique_id))
+        ''', (nom_fournisseur, telephone, adresse, id, boutique_id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -399,6 +420,903 @@ def supprimer_fournisseur(id):
     conn.close()
     flash('Fournisseur supprimé avec succès !', 'success')
     return redirect(url_for('index_fournisseurs'))
+
+
+# --- ROUTES STOCKS & MOUVEMENTS ---
+
+@app.route('/stocks')
+@login_required
+def index_stocks():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT s.*, p.nom_produit, p.prix_vente
+        FROM stocks s
+        JOIN produits p ON s.id_produit = p.id_produit
+        WHERE p.user_id = %s
+        ORDER BY p.nom_produit
+    ''', (boutique_id,))
+    stocks = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('stocks/index.html', stocks=stocks)
+
+@app.route('/stocks/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_stock():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        id_produit = request.form['id_produit']
+        quantite = request.form['quantite']
+        stock_minimum = request.form['stock_minimum']
+        
+        try:
+            cursor.execute('''
+                INSERT INTO stocks (id_produit, quantite, stock_minimum)
+                VALUES (%s, %s, %s)
+            ''', (id_produit, quantite, stock_minimum))
+            conn.commit()
+            flash('Stock ajouté avec succès !', 'success')
+            return redirect(url_for('index_stocks'))
+        except Exception as e:
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    produits = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('stocks/ajouter.html', produits=produits)
+
+@app.route('/stocks/mouvement', methods=['GET', 'POST'])
+@login_required
+def ajouter_mouvement():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        id_produit = request.form['id_produit']
+        type_mouvement = request.form['type_mouvement']
+        quantite = request.form['quantite']
+        description = request.form.get('description', '')
+        
+        try:
+            conn.start_transaction()
+            
+            # Ajouter le mouvement
+            cursor.execute('''
+                INSERT INTO mouvements_stock (id_produit, type_mouvement, quantite, description, user_id)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (id_produit, type_mouvement, quantite, description, boutique_id))
+            
+            # Mettre à jour le stock
+            if type_mouvement == 'ENTREE':
+                cursor.execute('''
+                    UPDATE stocks SET quantite = quantite + %s WHERE id_produit = %s
+                ''', (quantite, id_produit))
+            elif type_mouvement == 'SORTIE':
+                cursor.execute('''
+                    UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s
+                ''', (quantite, id_produit))
+            elif type_mouvement == 'AJUSTEMENT':
+                cursor.execute('''
+                    UPDATE stocks SET quantite = %s WHERE id_produit = %s
+                ''', (quantite, id_produit))
+            
+            conn.commit()
+            flash('Mouvement de stock enregistré avec succès !', 'success')
+            return redirect(url_for('index_stocks'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    # GET
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    produits = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('stocks/mouvement.html', produits=produits)
+
+@app.route('/stocks/historique')
+@login_required
+def historique_stocks():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT m.*, p.nom_produit
+        FROM mouvements_stock m
+        JOIN produits p ON m.id_produit = p.id_produit
+        WHERE p.user_id = %s
+        ORDER BY m.date_mouvement DESC
+        LIMIT 50
+    ''', (boutique_id,))
+    mouvements = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('stocks/historique.html', mouvements=mouvements)
+
+@app.route('/stocks/mouvement/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_mouvement(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        type_mouvement = request.form['type_mouvement']
+        quantite = request.form['quantite']
+        description = request.form.get('description', '')
+        
+        try:
+            conn.start_transaction()
+            
+            # Récupérer l'ancien mouvement pour annuler son effet sur le stock
+            cursor.execute('SELECT * FROM mouvements_stock WHERE id_mouvement = %s', (id,))
+            old_mouvement = cursor.fetchone()
+            
+            if old_mouvement:
+                # Annuler l'ancien effet sur le stock
+                if old_mouvement['type_mouvement'] == 'ENTREE':
+                    cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (old_mouvement['quantite'], old_mouvement['id_produit']))
+                elif old_mouvement['type_mouvement'] == 'SORTIE':
+                    cursor.execute('UPDATE stocks SET quantite = quantite + %s WHERE id_produit = %s', (old_mouvement['quantite'], old_mouvement['id_produit']))
+                
+                # Mettre à jour le mouvement
+                cursor.execute('''
+                    UPDATE mouvements_stock
+                    SET type_mouvement=%s, quantite=%s, description=%s
+                    WHERE id_mouvement=%s
+                ''', (type_mouvement, quantite, description, id))
+                
+                # Appliquer le nouvel effet sur le stock
+                if type_mouvement == 'ENTREE':
+                    cursor.execute('UPDATE stocks SET quantite = quantite + %s WHERE id_produit = %s', (quantite, old_mouvement['id_produit']))
+                elif type_mouvement == 'SORTIE':
+                    cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (quantite, old_mouvement['id_produit']))
+                elif type_mouvement == 'AJUSTEMENT':
+                    cursor.execute('UPDATE stocks SET quantite = %s WHERE id_produit = %s', (quantite, old_mouvement['id_produit']))
+            
+            conn.commit()
+            flash('Mouvement modifié avec succès !', 'success')
+            return redirect(url_for('historique_stocks'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('''
+        SELECT m.*, p.nom_produit
+        FROM mouvements_stock m
+        JOIN produits p ON m.id_produit = p.id_produit
+        WHERE m.id_mouvement = %s AND p.user_id = %s
+    ''', (id, boutique_id))
+    mouvement = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if mouvement is None:
+        return "Mouvement non trouvé", 404
+        
+    return render_template('stocks/modifier_mouvement.html', mouvement=mouvement)
+
+@app.route('/stocks/mouvement/supprimer/<int:id>')
+@login_required
+def supprimer_mouvement(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    try:
+        conn.start_transaction()
+        
+        # Récupérer le mouvement pour annuler son effet sur le stock
+        cursor.execute('''
+            SELECT m.*, p.nom_produit
+            FROM mouvements_stock m
+            JOIN produits p ON m.id_produit = p.id_produit
+            WHERE m.id_mouvement = %s AND p.user_id = %s
+        ''', (id, boutique_id))
+        mouvement = cursor.fetchone()
+        
+        if mouvement:
+            # Annuler l'effet sur le stock
+            if mouvement['type_mouvement'] == 'ENTREE':
+                cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (mouvement['quantite'], mouvement['id_produit']))
+            elif mouvement['type_mouvement'] == 'SORTIE':
+                cursor.execute('UPDATE stocks SET quantite = quantite + %s WHERE id_produit = %s', (mouvement['quantite'], mouvement['id_produit']))
+            
+            # Supprimer le mouvement
+            cursor.execute('DELETE FROM mouvements_stock WHERE id_mouvement = %s', (id,))
+        
+        conn.commit()
+        flash('Mouvement supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f"Erreur : {str(e)}", 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('historique_stocks'))
+
+@app.route('/stocks/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_stock(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        quantite = request.form['quantite']
+        stock_minimum = request.form['stock_minimum']
+        
+        cursor.execute('''
+            UPDATE stocks
+            SET quantite=%s, stock_minimum=%s
+            WHERE id_stock=%s
+        ''', (quantite, stock_minimum, id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Stock modifié avec succès !', 'success')
+        return redirect(url_for('index_stocks'))
+    
+    cursor.execute('''
+        SELECT s.*, p.nom_produit
+        FROM stocks s
+        JOIN produits p ON s.id_produit = p.id_produit
+        WHERE s.id_stock = %s AND p.user_id = %s
+    ''', (id, boutique_id))
+    stock = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if stock is None:
+        return "Stock non trouvé", 404
+        
+    return render_template('stocks/modifier.html', stock=stock)
+
+@app.route('/stocks/supprimer/<int:id>')
+@login_required
+def supprimer_stock(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM stocks WHERE id_stock = %s', (id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Stock supprimé avec succès !', 'success')
+    return redirect(url_for('index_stocks'))
+
+
+# --- ROUTES ACHATS ---
+
+@app.route('/achats')
+@login_required
+def index_achats():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT a.*, f.nom_fournisseur
+        FROM achats a
+        LEFT JOIN fournisseurs f ON a.id_fournisseur = f.id_fournisseur
+        WHERE a.user_id = %s
+        ORDER BY a.date_achat DESC
+    ''', (boutique_id,))
+    achats = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('achats/index.html', achats=achats)
+
+@app.route('/achats/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_achat():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        id_fournisseur = request.form.get('id_fournisseur')
+        produits = request.form.getlist('id_produit[]')
+        quantites = request.form.getlist('quantite[]')
+        prix_achats = request.form.getlist('prix_achat[]')
+        
+        try:
+            conn.start_transaction()
+            
+            # Créer l'achat
+            cursor.execute('''
+                INSERT INTO achats (id_fournisseur, montant_total, user_id)
+                VALUES (%s, 0, %s)
+            ''', (id_fournisseur if id_fournisseur else None, boutique_id))
+            id_achat = cursor.lastrowid
+            
+            montant_total = 0
+            
+            # Ajouter les lignes d'achat
+            for i in range(len(produits)):
+                if produits[i] and quantites[i] and prix_achats[i]:
+                    quantite = int(quantites[i])
+                    prix_achat = float(prix_achats[i])
+                    sous_total = quantite * prix_achat
+                    montant_total += sous_total
+                    
+                    cursor.execute('''
+                        INSERT INTO lignes_achat (id_achat, id_produit, quantite, prix_achat, sous_total)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (id_achat, produits[i], quantite, prix_achat, sous_total))
+                    
+                    # Mettre à jour le stock
+                    cursor.execute('''
+                        INSERT INTO stocks (id_produit, quantite, stock_minimum)
+                        VALUES (%s, %s, 5)
+                        ON DUPLICATE KEY UPDATE quantite = quantite + %s
+                    ''', (produits[i], quantite, quantite))
+            
+            # Mettre à jour le montant total
+            cursor.execute('UPDATE achats SET montant_total = %s WHERE id_achat = %s', (montant_total, id_achat))
+            
+            conn.commit()
+            flash('Achat ajouté avec succès !', 'success')
+            return redirect(url_for('index_achats'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('SELECT * FROM fournisseurs WHERE user_id = %s', (boutique_id,))
+    fournisseurs = cursor.fetchall()
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    produits = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('achats/ajouter.html', fournisseurs=fournisseurs, produits=produits)
+
+@app.route('/achats/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_achat(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        id_fournisseur = request.form.get('id_fournisseur')
+        produits = request.form.getlist('id_produit[]')
+        quantites = request.form.getlist('quantite[]')
+        prix_achats = request.form.getlist('prix_achat[]')
+        
+        try:
+            conn.start_transaction()
+            
+            # Récupérer les anciennes lignes pour annuler les stocks
+            cursor.execute('SELECT * FROM lignes_achat WHERE id_achat = %s', (id,))
+            old_lignes = cursor.fetchall()
+            for ligne in old_lignes:
+                cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (ligne['quantite'], ligne['id_produit']))
+            
+            # Supprimer les anciennes lignes
+            cursor.execute('DELETE FROM lignes_achat WHERE id_achat = %s', (id,))
+            
+            # Mettre à jour l'achat
+            cursor.execute('UPDATE achats SET id_fournisseur = %s WHERE id_achat = %s', (id_fournisseur if id_fournisseur else None, id))
+            
+            montant_total = 0
+            
+            # Ajouter les nouvelles lignes d'achat
+            for i in range(len(produits)):
+                if produits[i] and quantites[i] and prix_achats[i]:
+                    quantite = int(quantites[i])
+                    prix_achat = float(prix_achats[i])
+                    sous_total = quantite * prix_achat
+                    montant_total += sous_total
+                    
+                    cursor.execute('''
+                        INSERT INTO lignes_achat (id_achat, id_produit, quantite, prix_achat, sous_total)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (id, produits[i], quantite, prix_achat, sous_total))
+                    
+                    # Mettre à jour le stock
+                    cursor.execute('''
+                        INSERT INTO stocks (id_produit, quantite, stock_minimum)
+                        VALUES (%s, %s, 5)
+                        ON DUPLICATE KEY UPDATE quantite = quantite + %s
+                    ''', (produits[i], quantite, quantite))
+            
+            # Mettre à jour le montant total
+            cursor.execute('UPDATE achats SET montant_total = %s WHERE id_achat = %s', (montant_total, id))
+            
+            conn.commit()
+            flash('Achat modifié avec succès !', 'success')
+            return redirect(url_for('index_achats'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('''
+        SELECT a.*, f.nom_fournisseur
+        FROM achats a
+        LEFT JOIN fournisseurs f ON a.id_fournisseur = f.id_fournisseur
+        WHERE a.id_achat = %s AND a.user_id = %s
+    ''', (id, boutique_id))
+    achat = cursor.fetchone()
+    
+    cursor.execute('SELECT * FROM lignes_achat WHERE id_achat = %s', (id,))
+    lignes = cursor.fetchall()
+    
+    cursor.execute('SELECT * FROM fournisseurs WHERE user_id = %s', (boutique_id,))
+    fournisseurs = cursor.fetchall()
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    produits = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    if achat is None:
+        return "Achat non trouvé", 404
+        
+    return render_template('achats/modifier.html', achat=achat, lignes=lignes, fournisseurs=fournisseurs, produits=produits)
+
+@app.route('/achats/supprimer/<int:id>')
+@login_required
+def supprimer_achat(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    try:
+        conn.start_transaction()
+        
+        # Récupérer les lignes pour annuler les stocks
+        cursor.execute('SELECT * FROM lignes_achat WHERE id_achat = %s', (id,))
+        lignes = cursor.fetchall()
+        for ligne in lignes:
+            cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (ligne['quantite'], ligne['id_produit']))
+        
+        # Supprimer les lignes
+        cursor.execute('DELETE FROM lignes_achat WHERE id_achat = %s', (id,))
+        
+        # Supprimer l'achat
+        cursor.execute('DELETE FROM achats WHERE id_achat = %s', (id,))
+        
+        conn.commit()
+        flash('Achat supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f"Erreur : {str(e)}", 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('index_achats'))
+
+
+# --- ROUTES DEPENSES ---
+
+@app.route('/depenses')
+@login_required
+def index_depenses():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT * FROM depenses
+        WHERE user_id = %s
+        ORDER BY date_depense DESC
+    ''', (boutique_id,))
+    depenses = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('depenses/index.html', depenses=depenses)
+
+@app.route('/depenses/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_depense():
+    if request.method == 'POST':
+        libelle = request.form['libelle']
+        montant = request.form['montant']
+        description = request.form.get('description', '')
+        boutique_id = session.get('user_id')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO depenses (libelle, montant, description, user_id)
+            VALUES (%s, %s, %s, %s)
+        ''', (libelle, montant, description, boutique_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Dépense ajoutée avec succès !', 'success')
+        return redirect(url_for('index_depenses'))
+    
+    return render_template('depenses/ajouter.html')
+
+@app.route('/depenses/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_depense(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        libelle = request.form['libelle']
+        montant = request.form['montant']
+        description = request.form.get('description', '')
+        
+        cursor.execute('''
+            UPDATE depenses
+            SET libelle=%s, montant=%s, description=%s
+            WHERE id_depense=%s AND user_id=%s
+        ''', (libelle, montant, description, id, boutique_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Dépense modifiée avec succès !', 'success')
+        return redirect(url_for('index_depenses'))
+    
+    cursor.execute('SELECT * FROM depenses WHERE id_depense = %s AND user_id = %s', (id, boutique_id))
+    depense = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if depense is None:
+        return "Dépense non trouvée", 404
+        
+    return render_template('depenses/modifier.html', depense=depense)
+
+@app.route('/depenses/supprimer/<int:id>')
+@login_required
+def supprimer_depense(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    boutique_id = session.get('user_id')
+    
+    cursor.execute('DELETE FROM depenses WHERE id_depense = %s AND user_id = %s', (id, boutique_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Dépense supprimée avec succès !', 'success')
+    return redirect(url_for('index_depenses'))
+
+
+# --- ROUTES FACTURES ---
+
+@app.route('/factures')
+@login_required
+def index_factures():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    try:
+        cursor.execute('''
+            SELECT f.*, CONCAT(c.nom, ' ', c.prenom) as nom_client, c.telephone, c.adresse
+            FROM factures f
+            LEFT JOIN clients c ON f.id_client = c.id_client
+            WHERE f.user_id = %s
+            ORDER BY f.date_facture DESC
+        ''', (boutique_id,))
+        factures = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return render_template('factures/index.html', factures=factures)
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        flash(f"Erreur lors de la récupération des factures: {str(e)}", 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/factures/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_facture():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        id_client = request.form.get('id_client')
+        statut = request.form.get('statut', 'NON_PAYEE')
+        produits = request.form.getlist('id_produit[]')
+        quantites = request.form.getlist('quantite[]')
+        prix_unitaires = request.form.getlist('prix_unitaire[]')
+        
+        try:
+            conn.start_transaction()
+            
+            # Générer numéro de facture
+            import datetime
+            date_str = datetime.datetime.now().strftime('%Y%m%d')
+            cursor.execute('SELECT COUNT(*) as count FROM factures WHERE DATE(date_facture) = CURDATE()')
+            count = cursor.fetchone()['count']
+            numero_facture = f"FAC-{date_str}-{count + 1:04d}"
+            
+            # Créer la facture
+            cursor.execute('''
+                INSERT INTO factures (numero_facture, id_client, montant_total, statut, user_id)
+                VALUES (%s, %s, 0, %s, %s)
+            ''', (numero_facture, id_client if id_client else None, statut, boutique_id))
+            id_facture = cursor.lastrowid
+            
+            montant_total = 0
+            
+            # Ajouter les lignes de facture
+            for i in range(len(produits)):
+                if produits[i] and quantites[i] and prix_unitaires[i]:
+                    quantite = int(quantites[i])
+                    prix_unitaire = float(prix_unitaires[i])
+                    sous_total = quantite * prix_unitaire
+                    montant_total += sous_total
+                    
+                    cursor.execute('''
+                        INSERT INTO lignes_facture (id_facture, id_produit, quantite, prix_unitaire, sous_total)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (id_facture, produits[i], quantite, prix_unitaire, sous_total))
+                    
+                    # Déduire du stock
+                    cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (quantite, produits[i]))
+            
+            # Mettre à jour le montant total
+            cursor.execute('UPDATE factures SET montant_total = %s WHERE id_facture = %s', (montant_total, id_facture))
+            
+            conn.commit()
+            flash('Facture ajoutée avec succès !', 'success')
+            return redirect(url_for('index_factures'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (boutique_id,))
+    clients = cursor.fetchall()
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    produits = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('factures/ajouter.html', clients=clients, produits=produits)
+
+@app.route('/factures/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_facture(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        id_client = request.form.get('id_client')
+        statut = request.form.get('statut', 'NON_PAYEE')
+        produits = request.form.getlist('id_produit[]')
+        quantites = request.form.getlist('quantite[]')
+        prix_unitaires = request.form.getlist('prix_unitaire[]')
+        
+        try:
+            conn.start_transaction()
+            
+            # Récupérer les anciennes lignes pour restaurer les stocks
+            cursor.execute('SELECT * FROM lignes_facture WHERE id_facture = %s', (id,))
+            old_lignes = cursor.fetchall()
+            for ligne in old_lignes:
+                cursor.execute('UPDATE stocks SET quantite = quantite + %s WHERE id_produit = %s', (ligne['quantite'], ligne['id_produit']))
+            
+            # Supprimer les anciennes lignes
+            cursor.execute('DELETE FROM lignes_facture WHERE id_facture = %s', (id,))
+            
+            # Mettre à jour la facture
+            cursor.execute('UPDATE factures SET id_client = %s, statut = %s WHERE id_facture = %s', (id_client if id_client else None, statut, id))
+            
+            montant_total = 0
+            
+            # Ajouter les nouvelles lignes de facture
+            for i in range(len(produits)):
+                if produits[i] and quantites[i] and prix_unitaires[i]:
+                    quantite = int(quantites[i])
+                    prix_unitaire = float(prix_unitaires[i])
+                    sous_total = quantite * prix_unitaire
+                    montant_total += sous_total
+                    
+                    cursor.execute('''
+                        INSERT INTO lignes_facture (id_facture, id_produit, quantite, prix_unitaire, sous_total)
+                        VALUES (%s, %s, %s, %s, %s)
+                    ''', (id, produits[i], quantite, prix_unitaire, sous_total))
+                    
+                    # Déduire du stock
+                    cursor.execute('UPDATE stocks SET quantite = quantite - %s WHERE id_produit = %s', (quantite, produits[i]))
+            
+            # Mettre à jour le montant total
+            cursor.execute('UPDATE factures SET montant_total = %s WHERE id_facture = %s', (montant_total, id))
+            
+            conn.commit()
+            flash('Facture modifiée avec succès !', 'success')
+            return redirect(url_for('index_factures'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('''
+        SELECT f.*, CONCAT(c.nom, ' ', c.prenom) as nom_client, c.telephone, c.adresse
+        FROM factures f
+        LEFT JOIN clients c ON f.id_client = c.id_client
+        WHERE f.id_facture = %s AND f.user_id = %s
+    ''', (id, boutique_id))
+    facture = cursor.fetchone()
+    
+    cursor.execute('SELECT * FROM lignes_facture WHERE id_facture = %s', (id,))
+    lignes = cursor.fetchall()
+    
+    cursor.execute('SELECT * FROM clients WHERE user_id = %s', (boutique_id,))
+    clients = cursor.fetchall()
+    cursor.execute('SELECT * FROM produits WHERE user_id = %s', (boutique_id,))
+    produits = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    if facture is None:
+        return "Facture non trouvée", 404
+        
+    return render_template('factures/modifier.html', facture=facture, lignes=lignes, clients=clients, produits=produits)
+
+@app.route('/factures/supprimer/<int:id>')
+@login_required
+def supprimer_facture(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    try:
+        conn.start_transaction()
+        
+        # Récupérer les lignes pour restaurer les stocks
+        cursor.execute('SELECT * FROM lignes_facture WHERE id_facture = %s', (id,))
+        lignes = cursor.fetchall()
+        for ligne in lignes:
+            cursor.execute('UPDATE stocks SET quantite = quantite + %s WHERE id_produit = %s', (ligne['quantite'], ligne['id_produit']))
+        
+        # Supprimer les lignes
+        cursor.execute('DELETE FROM lignes_facture WHERE id_facture = %s', (id,))
+        
+        # Supprimer la facture
+        cursor.execute('DELETE FROM factures WHERE id_facture = %s', (id,))
+        
+        conn.commit()
+        flash('Facture supprimée avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f"Erreur : {str(e)}", 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('index_factures'))
+
+@app.route('/factures/pdf/<int:id>')
+@login_required
+def pdf_facture(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT f.*, CONCAT(c.nom, ' ', c.prenom) as nom_client, c.telephone, c.adresse
+        FROM factures f
+        LEFT JOIN clients c ON f.id_client = c.id_client
+        WHERE f.id_facture = %s AND f.user_id = %s
+    ''', (id, boutique_id))
+    facture = cursor.fetchone()
+    
+    cursor.execute('''
+        SELECT lf.*, p.nom_produit
+        FROM lignes_facture lf
+        JOIN produits p ON lf.id_produit = p.id_produit
+        WHERE lf.id_facture = %s
+    ''', (id,))
+    lignes = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    if facture is None:
+        return "Facture non trouvée", 404
+    
+    return render_template('factures/pdf.html', facture=facture, lignes=lignes)
+
+
+# --- ROUTES PARAMETRES ---
+
+@app.route('/parametres', methods=['GET', 'POST'])
+@login_required
+def parametres():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    boutique_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        nom_boutique = request.form.get('nom_boutique')
+        telephone = request.form.get('telephone')
+        email = request.form.get('email')
+        adresse = request.form.get('adresse')
+        devise = request.form.get('devise', 'FCFA')
+        slogan = request.form.get('slogan')
+        
+        # Gestion de l'upload du logo
+        logo = None
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename != '' and allowed_file(file.filename):
+                # Créer le dossier d'upload s'il n'existe pas
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                
+                filename = secure_filename(file.filename)
+                # Ajouter un timestamp pour éviter les doublons
+                import time
+                timestamp = str(int(time.time()))
+                filename = f"{timestamp}_{filename}"
+                
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                logo = f"/static/uploads/{filename}"
+        
+        try:
+            cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (boutique_id,))
+            parametres = cursor.fetchone()
+            
+            if parametres:
+                # Si un nouveau logo est uploadé, l'utiliser, sinon garder l'ancien
+                logo_to_save = logo if logo else parametres.get('logo')
+                cursor.execute('''
+                    UPDATE parametres 
+                    SET nom_boutique = %s, logo = %s, telephone = %s, email = %s, adresse = %s, devise = %s, slogan = %s
+                    WHERE user_id = %s
+                ''', (nom_boutique, logo_to_save, telephone, email, adresse, devise, slogan, boutique_id))
+            else:
+                cursor.execute('''
+                    INSERT INTO parametres (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (nom_boutique, logo, telephone, email, adresse, devise, slogan, boutique_id))
+            
+            conn.commit()
+            flash('Paramètres mis à jour avec succès !', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for('parametres'))
+    
+    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (boutique_id,))
+    parametres = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    return render_template('parametres/index.html', parametres=parametres)
 
 
 # --- ROUTES VENTES & FACTURES ---
@@ -506,7 +1424,7 @@ def facture(id):
     
     # Récupérer les infos de la vente
     cursor.execute('''
-        SELECT v.*, c.nom as nom_client, c.prenom as prenom_client, c.telephone, c.email, c.adresse
+        SELECT v.*, c.nom as nom_client, c.prenom as prenom_client, c.telephone, c.adresse
         FROM ventes v 
         JOIN clients c ON v.id_client = c.id_client
         WHERE v.id_vente = %s AND v.user_id = %s

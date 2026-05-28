@@ -1,116 +1,358 @@
-{% extends 'layout.html' %}
-
-{% block content %}
-<div class="invoice-container card" id="printable-area">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem;">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facture #{{ "%05d"|format(vente.id_vente) }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #22c55e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+            color: #333;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .invoice-header h1 {
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+        
+        .invoice-header p {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .company-info h2 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+        
+        .company-info p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .invoice-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .detail-box {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .detail-box.bill-to {
+            border-left-color: var(--primary);
+        }
+        
+        .detail-box.invoice-info {
+            border-left-color: var(--success);
+            text-align: right;
+        }
+        
+        .detail-box h4 {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
+        }
+        
+        .detail-box p {
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-box .client-name {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3rem;
+        }
+        
+        .invoice-table thead {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .invoice-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .invoice-table th:nth-child(2),
+        .invoice-table th:nth-child(3),
+        .invoice-table th:nth-child(4) {
+            text-align: right;
+        }
+        
+        .invoice-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .invoice-table td:nth-child(2),
+        .invoice-table td:nth-child(3),
+        .invoice-table td:nth-child(4) {
+            text-align: right;
+        }
+        
+        .invoice-table .product-name {
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+        
+        .invoice-table .product-ref {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .total-section {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .total-box {
+            width: 300px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-top: 2px solid var(--primary);
+        }
+        
+        .total-row .total-label {
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+        
+        .total-row .total-amount {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--success);
+        }
+        
+        .amount-in-words {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: right;
+            margin-top: 1rem;
+        }
+        
+        .footer {
+            margin-top: 5rem;
+            text-align: center;
+            border-top: 1px dashed #ddd;
+            padding-top: 2rem;
+        }
+        
+        .footer p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-print {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-back {
+            background: #6b7280;
+            color: white;
+        }
+        
+        @media print {
+            @page {
+                margin: 0;
+                size: A4;
+            }
+            
+            * {
+                visibility: hidden;
+            }
+            
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            .invoice-container, .invoice-container * {
+                visibility: visible;
+            }
+            
+            .invoice-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none !important;
+                padding: 2rem !important;
+                margin: 0 !important;
+            }
+            
+            .action-buttons {
+                display: none !important;
+            }
+            
+            .detail-box {
+                background: white !important;
+                border: 1px solid #ddd !important;
+            }
+            
+            .invoice-table thead {
+                background: #333 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="invoice-container">
+    <div class="invoice-header">
         <div>
-            <h1 style="color: var(--primary); margin-bottom: 0.5rem;">FACTURE ONGOIBA DISTRIBUTION</h1>
-            <p style="color: var(--text-muted);">#INV-{{ "%05d"|format(vente.id_vente) }}</p>
+            <h1>FACTURE</h1>
+            <p>#INV-{{ "%05d"|format(vente.id_vente) }}</p>
         </div>
-        <div style="text-align: right;">
-            <h2 style="margin-bottom: 0.5rem;">Ma Boutique</h2>
-            <p style="font-size: 0.9rem; color: var(--text-muted);">
-                Bamako Mali<br>
-                Kalabancoro Marché<br>
-                Tel: +223 79 37 84 71
-            </p>
+        <div class="company-info">
+            <h2>Ma Boutique</h2>
+            <p>Bamako, Mali<br>
+            Tél: +223 XX XX XX XX<br>
+            Email: contact@boutique.ml</p>
         </div>
     </div>
 
-    <div
-        style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem; padding: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 16px;">
-        <div>
-            <h4 style="text-transform: uppercase; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Facturer à</h4>
-            <p style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem;">{{ vente.nom_client }} {{
-                vente.prenom_client }}</p>
-            <p style="font-size: 0.9rem; color: var(--text-muted);">
-                {{ vente.adresse or 'N/A' }}<br>
-                {{ vente.telephone or '' }}<br>
-                {{ vente.email or '' }}
-            </p>
+    <div class="invoice-details">
+        <div class="detail-box bill-to">
+            <h4>Facturer à</h4>
+            <p class="client-name">{{ vente.nom_client }} {{ vente.prenom_client }}</p>
+            <p>{{ vente.adresse or 'Adresse non renseignée' }}<br>
+            Tél: {{ vente.telephone or 'Non renseigné' }}</p>
         </div>
-        <div style="text-align: right;">
-            <h4 style="text-transform: uppercase; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Détails</h4>
-            <p style="font-size: 0.9rem;"><strong>Date:</strong> {{ vente.date_vente.strftime('%d %B %Y') }}</p>
-            <p style="font-size: 0.9rem;"><strong>Heure:</strong> {{ vente.date_vente.strftime('%H:%M') }}</p>
+        <div class="detail-box invoice-info">
+            <h4>Détails de la facture</h4>
+            <p><strong>Date:</strong> {{ vente.date_vente.strftime('%d/%m/%Y') }}</p>
+            <p><strong>Heure:</strong> {{ vente.date_vente.strftime('%H:%M') }}</p>
         </div>
     </div>
 
-    <table class="invoice-table" style="margin-bottom: 3rem;">
+    <table class="invoice-table">
         <thead>
             <tr>
-                <th style="width: 50%;">Description</th>
-                <th style="text-align: center;">Qté</th>
-                <th style="text-align: right;">Prix Unitaire</th>
-                <th style="text-align: right;">Total</th>
+                <th>Description</th>
+                <th>Qté</th>
+                <th>Prix Unitaire</th>
+                <th>Total</th>
             </tr>
         </thead>
         <tbody>
             {% for ligne in lignes %}
             <tr>
                 <td>
-                    <p style="font-weight: 600; margin-bottom: 0.1rem;">{{ ligne.nom_produit }}</p>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">Ref: #{{ ligne.id_produit }}</span>
+                    <p class="product-name">{{ ligne.nom_produit }}</p>
+                    <span class="product-ref">Ref: #{{ ligne.id_produit }}</span>
                 </td>
-                <td style="text-align: center;">{{ ligne.quantite }}</td>
-                <td style="text-align: right;">{{ "{:,.0f}".format(ligne.prix_unitaire) }} FCFA</td>
-                <td style="text-align: right; font-weight: 700;">{{ "{:,.0f}".format(ligne.quantite *
-                    ligne.prix_unitaire) }} FCFA</td>
+                <td>{{ ligne.quantite }}</td>
+                <td>{{ "{:,.0f}".format(ligne.prix_unitaire) }} FCFA</td>
+                <td>{{ "{:,.0f}".format(ligne.quantite * ligne.prix_unitaire) }} FCFA</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <div style="display: flex; justify-content: flex-end;">
-        <div style="width: 300px;">
-            <div
-                style="display: flex; justify-content: space-between; padding: 1rem 0; border-top: 2px solid var(--primary);">
-                <span style="font-weight: 700; font-size: 1.25rem;">TOTAL</span>
-                <span style="font-weight: 700; font-size: 1.25rem; color: var(--success);">{{
-                    "{:,.0f}".format(vente.total) }} FCFA</span>
+    <div class="total-section">
+        <div class="total-box">
+            <div class="total-row">
+                <span class="total-label">TOTAL</span>
+                <span class="total-amount">{{ "{:,.0f}".format(vente.total) }} FCFA</span>
             </div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); text-align: right; margin-top: 1rem;">
-                Arrêté à la somme de : <br>
-                <strong style="text-transform: uppercase; color: var(--text-main);">{{ vente.total|int }} FRANCS
-                    CFA</strong>
+            <p class="amount-in-words">
+                Arrêté à la somme de :<br>
+                <strong>{{ vente.total|int }} FRANCS CFA</strong>
             </p>
         </div>
     </div>
 
-    <div style="margin-top: 5rem; text-align: center; border-top: 1px dashed var(--glass-border); padding-top: 2rem;">
-        <p style="font-size: 0.9rem; color: var(--text-muted);">Merci de votre confiance !</p>
+    <div class="footer">
+        <p>Merci de votre confiance !</p>
     </div>
 </div>
 
-<div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;" class="no-print">
-    <button onclick="window.print()" class="btn-submit" style="width: auto; background: var(--success);">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            style="margin-right: 0.5rem; vertical-align: middle;">
-            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-            <rect x="6" y="14" width="12" height="8"></rect>
-        </svg>
+<div class="action-buttons">
+    <button onclick="window.print()" class="btn btn-print">
         Imprimer
     </button>
-    <a href="{{ url_for('index_ventes') }}" class="btn-submit"
-        style="width: auto; background: var(--secondary); text-decoration: none;">Retour</a>
+    <a href="{{ url_for('index_ventes') }}" class="btn btn-back">Retour</a>
 </div>
 
-<style>
-    /* Styles pour l'impression normale */
-    @media print {
-        body { background: white !important; color: black !important; }
-        .navbar, .footer, .no-print, .nav-links, .btn-add { display: none !important; }
-        .main-content { padding: 0 !important; }
-        .card { background: white !important; box-shadow: none !important; border: none !important; padding: 0 !important; color: black !important; }
-        .invoice-container { margin: 0 !important; width: 100% !important; }
-        * { color: black !important; text-shadow: none !important; }
-        .invoice-table th { border-bottom: 2px solid #333 !important; color: black !important; }
-        .invoice-table td { border-bottom: 1px solid #eee !important; }
-        h1, h2, h3, h4 { color: black !important; }
-    }
-</style>
-{% endblock %}
+</body>
+</html>

@@ -1,0 +1,75 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <h2>Paramètres de la Boutique</h2>
+        <form action="{{ url_for('parametres') }}" method="POST" enctype="multipart/form-data">
+            
+            <div class="form-group">
+                <label for="nom_boutique">Nom de la boutique</label>
+                <input type="text" name="nom_boutique" id="nom_boutique" value="{{ parametres.nom_boutique if parametres else '' }}" placeholder="Ex: Ma Boutique">
+            </div>
+
+            <div class="form-group">
+                <label for="slogan">Slogan</label>
+                <input type="text" name="slogan" id="slogan" value="{{ parametres.slogan if parametres else '' }}" placeholder="Ex: Votre partenaire de confiance">
+            </div>
+
+            <div class="form-group">
+                <label for="logo">Logo de la boutique</label>
+                <input type="file" name="logo" id="logo" accept="image/*">
+                {% if parametres and parametres.logo %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ parametres.logo }}" alt="Logo actuel" style="max-width: 100px; max-height: 100px; border-radius: 8px;">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Logo actuel</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="telephone">Téléphone</label>
+                <input type="text" name="telephone" id="telephone" value="{{ parametres.telephone if parametres else '' }}" placeholder="Ex: +221 77 123 45 67">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" name="email" id="email" value="{{ parametres.email if parametres else '' }}" placeholder="Ex: contact@boutique.com">
+            </div>
+
+            <div class="form-group">
+                <label for="adresse">Adresse</label>
+                <textarea name="adresse" id="adresse" rows="3" placeholder="Ex: 123 Rue Principale, Dakar, Sénégal">{{ parametres.adresse if parametres else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="devise">Devise</label>
+                <input type="text" name="devise" id="devise" value="{{ parametres.devise if parametres else 'FCFA' }}" placeholder="Ex: FCFA, EUR, USD">
+            </div>
+
+            <button type="submit" class="btn-submit">Enregistrer les Paramètres</button>
+            <a href="{{ url_for('dashboard') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+
+<style>
+    textarea {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        color: var(--text-main);
+        font-family: inherit;
+        resize: vertical;
+        transition: all 0.3s;
+    }
+    
+    textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endblock %}
