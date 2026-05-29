@@ -282,8 +282,8 @@
                     <tr>
                         <td>{{ ligne.nom_produit }}</td>
                         <td class="text-center">{{ ligne.quantite }}</td>
-                        <td class="text-right">{{ '{:,.2f}'.format(ligne.prix_unitaire) if ligne.prix_unitaire else '0,00' }} FCFA</td>
-                        <td class="text-right">{{ '{:,.2f}'.format(ligne.sous_total) if ligne.sous_total else '0,00' }} FCFA</td>
+                        <td class="text-right">{{ '{:,.0f}'.format(ligne.prix_unitaire) if ligne.prix_unitaire else '0' }} FCFA</td>
+                        <td class="text-right">{{ '{:,.0f}'.format(ligne.sous_total) if ligne.sous_total else '0' }} FCFA</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -293,7 +293,7 @@
         <div class="invoice-total">
             <div class="total-row grand-total">
                 <span class="label">TOTAL:</span>
-                <span class="amount">{{ '{:,.2f}'.format(facture.montant_total) if facture.montant_total else '0,00' }} FCFA</span>
+                <span class="amount">{{ '{:,.0f}'.format(facture.montant_total) if facture.montant_total else '0' }} FCFA</span>
             </div>
         </div>
         

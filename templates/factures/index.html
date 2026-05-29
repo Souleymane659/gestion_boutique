@@ -31,7 +31,7 @@
                     <td style="font-weight: 600;">{{ facture.numero_facture }}</td>
                     <td>{{ facture.nom_client or 'Non spécifié' }}</td>
                     <td>{{ facture.date_facture.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td style="font-weight: 700; color: var(--success);">{{ '{:,.2f}'.format(facture.montant_total) if facture.montant_total else '0,00' }} FCFA</td>
+                    <td style="font-weight: 700; color: var(--success);">{{ '{:,.0f}'.format(facture.montant_total) if facture.montant_total else '0' }} FCFA</td>
                     <td>
                         {% if facture.statut == 'PAYEE' %}
                             <span class="badge" style="background: var(--success); color: white;">PAYÉE</span>
