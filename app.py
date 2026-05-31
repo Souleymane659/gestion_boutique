@@ -1606,5 +1606,436 @@ def supprimer_utilisateur(id):
     return redirect(url_for('index_utilisateurs'))
 
 
+# --- ROUTES INVENTAIRES ---
+
+@app.route('/inventaires')
+@login_required
+def index_inventaires():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT * FROM inventaires
+        WHERE user_id = %s
+        ORDER BY date_inventaire DESC
+    ''', (user_id,))
+    inventaires = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('inventaires/index.html', inventaires=inventaires)
+
+@app.route('/inventaires/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_inventaire():
+    if request.method == 'POST':
+        nom_produit = request.form['nom_produit']
+        quantite = request.form['quantite']
+        prix_achat = request.form['prix_achat']
+        montant = float(quantite) * float(prix_achat)
+        user_id = session.get('user_id')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO inventaires (nom_produit, quantite, prix_achat, montant, user_id)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (nom_produit, quantite, prix_achat, montant, user_id))
+            conn.commit()
+            flash('Inventaire ajouté avec succès !', 'success')
+        except mysql.connector.Error as err:
+            flash(f"Erreur : {err}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for('index_inventaires'))
+    
+    return render_template('inventaires/ajouter.html')
+
+@app.route('/inventaires/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_inventaire(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        nom_produit = request.form['nom_produit']
+        quantite = request.form['quantite']
+        prix_achat = request.form['prix_achat']
+        montant = float(quantite) * float(prix_achat)
+        
+        cursor.execute('''
+            UPDATE inventaires
+            SET nom_produit=%s, quantite=%s, prix_achat=%s, montant=%s
+            WHERE id_inventaire=%s AND user_id=%s
+        ''', (nom_produit, quantite, prix_achat, montant, id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Inventaire modifié avec succès !', 'success')
+        return redirect(url_for('index_inventaires'))
+    
+    cursor.execute('SELECT * FROM inventaires WHERE id_inventaire = %s AND user_id = %s', (id, user_id))
+    inventaire = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if inventaire is None:
+        return "Inventaire non trouvé", 404
+        
+    return render_template('inventaires/modifier.html', inventaire=inventaire)
+
+@app.route('/inventaires/supprimer/<int:id>')
+@login_required
+def supprimer_inventaire(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM inventaires WHERE id_inventaire = %s AND user_id = %s', (id, session.get('user_id')))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Inventaire supprimé avec succès !', 'success')
+    return redirect(url_for('index_inventaires'))
+
+@app.route('/inventaires/rapport')
+@login_required
+def rapport_inventaires():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Statistiques générales
+    cursor.execute('''
+        SELECT COUNT(*) as nb_articles, SUM(quantite) as total_quantite, SUM(montant) as total_montant
+        FROM inventaires
+        WHERE user_id = %s
+    ''', (user_id,))
+    stats = cursor.fetchone()
+    
+    # Liste des inventaires
+    cursor.execute('''
+        SELECT * FROM inventaires
+        WHERE user_id = %s
+        ORDER BY date_inventaire DESC
+    ''', (user_id,))
+    inventaires = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('inventaires/rapport.html', stats=stats, inventaires=inventaires)
+
+
+# --- ROUTES CAISSES ---
+
+@app.route('/caisses')
+@login_required
+def index_caisses():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    cursor.execute('''
+        SELECT * FROM caisses
+        WHERE user_id = %s
+        ORDER BY date_creation DESC
+    ''', (user_id,))
+    caisses = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('caisses/index.html', caisses=caisses)
+
+@app.route('/caisses/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_caisse():
+    if request.method == 'POST':
+        nom_caisse = request.form['nom_caisse']
+        type_caisse = request.form['type_caisse']
+        solde = request.form.get('solde', 0)
+        user_id = session.get('user_id')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO caisses (nom_caisse, type_caisse, solde, user_id)
+                VALUES (%s, %s, %s, %s)
+            ''', (nom_caisse, type_caisse, solde, user_id))
+            conn.commit()
+            flash('Caisse ajoutée avec succès !', 'success')
+        except mysql.connector.Error as err:
+            flash(f"Erreur : {err}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+        return redirect(url_for('index_caisses'))
+    
+    return render_template('caisses/ajouter.html')
+
+@app.route('/caisses/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_caisse(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        nom_caisse = request.form['nom_caisse']
+        type_caisse = request.form['type_caisse']
+        solde = request.form.get('solde', 0)
+        
+        cursor.execute('''
+            UPDATE caisses
+            SET nom_caisse=%s, type_caisse=%s, solde=%s
+            WHERE id_caisse=%s AND user_id=%s
+        ''', (nom_caisse, type_caisse, solde, id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Caisse modifiée avec succès !', 'success')
+        return redirect(url_for('index_caisses'))
+    
+    cursor.execute('SELECT * FROM caisses WHERE id_caisse = %s AND user_id = %s', (id, user_id))
+    caisse = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if caisse is None:
+        return "Caisse non trouvée", 404
+        
+    return render_template('caisses/modifier.html', caisse=caisse)
+
+@app.route('/caisses/supprimer/<int:id>')
+@login_required
+def supprimer_caisse(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM caisses WHERE id_caisse = %s AND user_id = %s', (id, session.get('user_id')))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Caisse supprimée avec succès !', 'success')
+    return redirect(url_for('index_caisses'))
+
+
+# --- ROUTES MOUVEMENTS CAISSE ---
+
+@app.route('/caisses/<int:id_caisse>/mouvements')
+@login_required
+def mouvements_caisse(id_caisse):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer la caisse
+    cursor.execute('SELECT * FROM caisses WHERE id_caisse = %s AND user_id = %s', (id_caisse, user_id))
+    caisse = cursor.fetchone()
+    
+    if caisse is None:
+        cursor.close()
+        conn.close()
+        return "Caisse non trouvée", 404
+    
+    # Récupérer les mouvements
+    cursor.execute('''
+        SELECT * FROM mouvements_caisse
+        WHERE id_caisse = %s
+        ORDER BY date_mouvement DESC
+        LIMIT 50
+    ''', (id_caisse,))
+    mouvements = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('caisses/mouvements.html', caisse=caisse, mouvements=mouvements)
+
+@app.route('/caisses/<int:id_caisse>/mouvements/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_mouvement_caisse(id_caisse):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer la caisse
+    cursor.execute('SELECT * FROM caisses WHERE id_caisse = %s AND user_id = %s', (id_caisse, user_id))
+    caisse = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    if caisse is None:
+        return "Caisse non trouvée", 404
+    
+    if request.method == 'POST':
+        type_mouvement = request.form['type_mouvement']
+        montant = request.form['montant']
+        motif = request.form.get('motif', '')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Ajouter le mouvement
+            cursor.execute('''
+                INSERT INTO mouvements_caisse (id_caisse, type_mouvement, montant, motif, user_id)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (id_caisse, type_mouvement, montant, motif, user_id))
+            
+            # Mettre à jour le solde de la caisse
+            if type_mouvement == 'ENTREE':
+                cursor.execute('UPDATE caisses SET solde = solde + %s WHERE id_caisse = %s', (montant, id_caisse))
+            elif type_mouvement == 'SORTIE':
+                cursor.execute('UPDATE caisses SET solde = solde - %s WHERE id_caisse = %s', (montant, id_caisse))
+            
+            conn.commit()
+            flash('Mouvement ajouté avec succès !', 'success')
+            return redirect(url_for('mouvements_caisse', id_caisse=id_caisse))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    return render_template('caisses/ajouter_mouvement.html', caisse=caisse)
+
+
+@app.route('/caisses/<int:id_caisse>/mouvements/modifier/<int:id_mouvement>', methods=['GET', 'POST'])
+@login_required
+def modifier_mouvement_caisse(id_caisse, id_mouvement):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer la caisse
+    cursor.execute('SELECT * FROM caisses WHERE id_caisse = %s AND user_id = %s', (id_caisse, user_id))
+    caisse = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    if caisse is None:
+        return "Caisse non trouvée", 404
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Récupérer le mouvement
+    cursor.execute('SELECT * FROM mouvements_caisse WHERE id_mouvement = %s AND id_caisse = %s', (id_mouvement, id_caisse))
+    mouvement = cursor.fetchone()
+    
+    if mouvement is None:
+        cursor.close()
+        conn.close()
+        return "Mouvement non trouvé", 404
+    
+    if request.method == 'POST':
+        type_mouvement = request.form['type_mouvement']
+        montant = request.form['montant']
+        motif = request.form.get('motif', '')
+        
+        # Annuler l'ancien mouvement sur le solde
+        ancien_type = mouvement['type_mouvement']
+        ancien_montant = mouvement['montant']
+        
+        if ancien_type == 'ENTREE':
+            cursor.execute('UPDATE caisses SET solde = solde - %s WHERE id_caisse = %s', (ancien_montant, id_caisse))
+        elif ancien_type == 'SORTIE':
+            cursor.execute('UPDATE caisses SET solde = solde + %s WHERE id_caisse = %s', (ancien_montant, id_caisse))
+        
+        # Appliquer le nouveau mouvement sur le solde
+        if type_mouvement == 'ENTREE':
+            cursor.execute('UPDATE caisses SET solde = solde + %s WHERE id_caisse = %s', (montant, id_caisse))
+        elif type_mouvement == 'SORTIE':
+            cursor.execute('UPDATE caisses SET solde = solde - %s WHERE id_caisse = %s', (montant, id_caisse))
+        
+        # Mettre à jour le mouvement
+        cursor.execute('''
+            UPDATE mouvements_caisse
+            SET type_mouvement=%s, montant=%s, motif=%s
+            WHERE id_mouvement=%s
+        ''', (type_mouvement, montant, motif, id_mouvement))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Mouvement modifié avec succès !', 'success')
+        return redirect(url_for('mouvements_caisse', id_caisse=id_caisse))
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('caisses/modifier_mouvement.html', caisse=caisse, mouvement=mouvement)
+
+
+@app.route('/caisses/<int:id_caisse>/mouvements/supprimer/<int:id_mouvement>')
+@login_required
+def supprimer_mouvement_caisse(id_caisse, id_mouvement):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer le mouvement
+    cursor.execute('SELECT * FROM mouvements_caisse WHERE id_mouvement = %s AND id_caisse = %s', (id_mouvement, id_caisse))
+    mouvement = cursor.fetchone()
+    
+    if mouvement is None:
+        cursor.close()
+        conn.close()
+        flash('Mouvement non trouvé', 'danger')
+        return redirect(url_for('mouvements_caisse', id_caisse=id_caisse))
+    
+    # Annuler le mouvement sur le solde
+    if mouvement['type_mouvement'] == 'ENTREE':
+        cursor.execute('UPDATE caisses SET solde = solde - %s WHERE id_caisse = %s', (mouvement['montant'], id_caisse))
+    elif mouvement['type_mouvement'] == 'SORTIE':
+        cursor.execute('UPDATE caisses SET solde = solde + %s WHERE id_caisse = %s', (mouvement['montant'], id_caisse))
+    
+    # Supprimer le mouvement
+    cursor.execute('DELETE FROM mouvements_caisse WHERE id_mouvement = %s', (id_mouvement,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Mouvement supprimé avec succès !', 'success')
+    return redirect(url_for('mouvements_caisse', id_caisse=id_caisse))
+
+
+# --- RAPPORT CAISSE ---
+
+@app.route('/caisses/rapport')
+@login_required
+def rapport_caisses():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Statistiques générales
+    cursor.execute('''
+        SELECT COUNT(*) as nb_caisses, SUM(solde) as total_solde
+        FROM caisses
+        WHERE user_id = %s
+    ''', (user_id,))
+    stats = cursor.fetchone()
+    
+    # Liste des caisses avec leurs mouvements récents
+    cursor.execute('''
+        SELECT c.*, 
+               (SELECT COUNT(*) FROM mouvements_caisse WHERE id_caisse = c.id_caisse) as nb_mouvements
+        FROM caisses c
+        WHERE c.user_id = %s
+        ORDER BY c.date_creation DESC
+    ''', (user_id,))
+    caisses = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('caisses/rapport.html', stats=stats, caisses=caisses)
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

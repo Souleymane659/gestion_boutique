@@ -1,0 +1,37 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Ajouter une Caisse</h2>
+        <form action="{{ url_for('ajouter_caisse') }}" method="POST">
+            
+            <div class="form-group">
+                <label for="nom_caisse">Nom de la Caisse</label>
+                <input type="text" name="nom_caisse" id="nom_caisse" placeholder="Ex: Caisse Principale" required>
+            </div>
+
+            <div class="form-group">
+                <label for="type_caisse">Type de Caisse</label>
+                <select name="type_caisse" id="type_caisse" required>
+                    <option value="">Sélectionner un type</option>
+                    <option value="CASH">CASH</option>
+                    <option value="ORANGE_MONEY">ORANGE MONEY</option>
+                    <option value="MOBICASH">MOBICASH</option>
+                    <option value="WAVE">WAVE</option>
+                    <option value="CARTE_BANCAIRE">CARTE BANCAIRE</option>
+                    <option value="BANQUE">BANQUE</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="solde">Solde Initial (FCFA)</label>
+                <input type="number" step="0.01" name="solde" id="solde" placeholder="0.00" value="0">
+            </div>
+
+            <button type="submit" class="btn-submit">Enregistrer la Caisse</button>
+            <a href="{{ url_for('index_caisses') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

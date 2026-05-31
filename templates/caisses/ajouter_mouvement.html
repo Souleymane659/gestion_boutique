@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Ajouter un Mouvement - {{ caisse.nom_caisse }}</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Solde actuel: <strong>{{ '{:,.0f}'.format(caisse.solde) }} FCFA</strong></p>
+        
+        <form action="{{ url_for('ajouter_mouvement_caisse', id_caisse=caisse.id_caisse) }}" method="POST">
+            
+            <div class="form-group">
+                <label for="type_mouvement">Type de Mouvement</label>
+                <select name="type_mouvement" id="type_mouvement" required>
+                    <option value="">Sélectionner un type</option>
+                    <option value="ENTREE">ENTRÉE</option>
+                    <option value="SORTIE">SORTIE</option>
+                    <option value="TRANSFERT">TRANSFERT</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="montant">Montant (FCFA)</label>
+                <input type="number" step="0.01" name="montant" id="montant" placeholder="0.00" required>
+            </div>
+
+            <div class="form-group">
+                <label for="motif">Motif</label>
+                <input type="text" name="motif" id="motif" placeholder="Ex: Vente, Dépense, Transfert...">
+            </div>
+
+            <button type="submit" class="btn-submit">Enregistrer le Mouvement</button>
+            <a href="{{ url_for('mouvements_caisse', id_caisse=caisse.id_caisse) }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

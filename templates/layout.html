@@ -70,6 +70,22 @@
                         Stocks
                     </a>
                 </li>
+                <li class="{% if request.endpoint == 'index_inventaires' or 'inventaire' in request.endpoint or request.endpoint == 'rapport_inventaires' %}active{% endif %}">
+                    <a href="{{ url_for('index_inventaires') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-10h-2v4H7v2h4v4h2v-4h4V9h-4V7z"/>
+                        </svg>
+                        Inventaires
+                    </a>
+                </li>
+                <li class="{% if request.endpoint == 'index_caisses' or 'caisse' in request.endpoint or request.endpoint == 'rapport_caisses' %}active{% endif %}">
+                    <a href="{{ url_for('index_caisses') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05 1.18 1.91 2.53 1.91 1.29 0 2.13-.72 2.13-1.71 0-2.69-4.5-2.96-4.5-5.62 0-1.63 1.41-2.92 3.17-3.25V4h2.67v1.9c1.65.35 2.9 1.48 3.06 3.34h-1.98c-.11-.95-1.11-1.8-2.35-1.8-1.21 0-1.92.68-1.92 1.64 0 2.54 4.5 2.85 4.5 5.66 0 1.72-1.46 3.04-3.33 3.35z"/>
+                        </svg>
+                        Caisses
+                    </a>
+                </li>
                 <li class="{% if request.endpoint == 'index_achats' or 'achat' in request.endpoint %}active{% endif %}">
                     <a href="{{ url_for('index_achats') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">

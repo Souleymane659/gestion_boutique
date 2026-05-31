@@ -1,0 +1,73 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2>Rapport des Caisses</h2>
+            <span class="badge badge-stock">{{ caisses|length }} Caisses</span>
+        </div>
+        <a href="{{ url_for('index_caisses') }}" class="btn-add">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Retour
+        </a>
+    </div>
+
+    <!-- Statistiques -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Caisses</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ stats.nb_caisses or 0 }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 12px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Solde Total</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(stats.total_solde) if stats.total_solde else '0' }} FCFA</div>
+        </div>
+    </div>
+
+    <!-- Tableau des caisses -->
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Solde</th>
+                    <th>Mouvements</th>
+                    <th>Date Création</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for caisse in caisses %}
+                <tr>
+                    <td>#{{ caisse.id_caisse }}</td>
+                    <td style="font-weight: 600;">{{ caisse.nom_caisse }}</td>
+                    <td>
+                        <span class="badge" style="background: var(--primary); color: white;">{{ caisse.type_caisse }}</span>
+                    </td>
+                    <td style="font-weight: 700; color: var(--success);">{{ '{:,.0f}'.format(caisse.solde) }} FCFA</td>
+                    <td>
+                        <span class="badge badge-stock">{{ caisse.nb_mouvements or 0 }}</span>
+                    </td>
+                    <td>{{ caisse.date_creation.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('mouvements_caisse', id_caisse=caisse.id_caisse) }}" class="btn-icon" title="Mouvements" style="color: var(--secondary);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not caisses %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                        Aucune caisse enregistrée.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
