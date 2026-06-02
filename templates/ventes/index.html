@@ -8,12 +8,12 @@
             <span class="badge badge-stock">{{ ventes|length }} Ventes</span>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <a href="{{ url_for('dashboard') }}" class="btn-add" style="background: var(--secondary);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <a href="{{ url_for('dashboard') }}" class="btn-add" style="background: var(--secondary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
-            <a href="{{ url_for('ajouter_vente') }}" class="btn-add" style="background: var(--success);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <a href="{{ url_for('ajouter_vente') }}" class="btn-add" style="background: var(--success); font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Effectuer une Vente
             </a>
         </div>
@@ -21,36 +21,36 @@
 
 
     <div class="table-responsive">
-        <table>
+        <table style="font-size: 1.2rem; width: 100%;">
             <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Client</th>
-                    <th>Total</th>
-                    <th>Actions</th>
+                <tr style="font-size: 1.3rem; padding: 1.5rem;">
+                    <th style="padding: 1rem; width: 80px;">ID</th>
+                    <th style="padding: 1rem; width: 180px;">Date</th>
+                    <th style="padding: 1rem; width: 250px;">Client</th>
+                    <th style="padding: 1rem; width: 150px;">Total</th>
+                    <th style="padding: 1rem; width: 120px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for vente in ventes %}
-                <tr>
-                    <td>#{{ vente.id_vente }}</td>
-                    <td>{{ vente.date_vente.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td style="font-weight: 600;">{{ vente.nom_client }} {{ vente.prenom_client }}</td>
-                    <td style="color: var(--success); font-weight: 700;">{{ "{:,.0f}".format(vente.total) }} FCFA</td>
-                    <td class="actions">
-                        <a href="{{ url_for('facture', id=vente.id_vente) }}" class="btn-icon" title="Voir Facture">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <tr style="padding: 1.5rem;">
+                    <td style="font-size: 1.2rem; font-weight: 600; padding: 1rem;">#{{ vente.id_vente }}</td>
+                    <td style="font-size: 1.2rem; padding: 1rem;">{{ vente.date_vente.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td style="font-weight: 600; font-size: 1.3rem; padding: 1rem;">{{ vente.nom_client }} {{ vente.prenom_client }}</td>
+                    <td style="color: var(--success); font-weight: 700; font-size: 1.2rem; padding: 1rem;">{{ "{:,.0f}".format(vente.total) }} FCFA</td>
+                    <td class="actions" style="padding: 1rem;">
+                        <a href="{{ url_for('facture', id=vente.id_vente) }}" class="btn-icon" title="Voir Facture" style="width: 45px; height: 45px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         </a>
-                        <a href="#" class="btn-icon btn-delete" title="Annuler" onclick="return confirm('Voulez-vous vraiment annuler cette vente ?')">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        <a href="#" class="btn-icon btn-delete" title="Annuler" onclick="return confirm('Voulez-vous vraiment annuler cette vente ?')" style="width: 45px; height: 45px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </a>
                     </td>
                 </tr>
                 {% endfor %}
                 {% if not ventes %}
                 <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.3rem;">
                         Aucune vente enregistrée. <a href="{{ url_for('ajouter_vente') }}" style="color: var(--primary);">Faire une vente</a>
                     </td>
                 </tr>
