@@ -231,11 +231,31 @@ def supprimer(id):
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM produits WHERE id_produit = %s AND user_id = %s', (id, session.get('user_id')))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    flash('Produit supprimé avec succès !', 'success')
+    user_id = session.get('user_id')
+    try:
+        # Démarrer une transaction
+        conn.start_transaction()
+        
+        # Supprimer d'abord les lignes de vente associées
+        cursor.execute('DELETE FROM lignes_vente WHERE id_produit = %s', (id,))
+        
+        # Supprimer les lignes de facture associées
+        cursor.execute('DELETE FROM lignes_facture WHERE id_produit = %s', (id,))
+        
+        # Supprimer les lignes d'achat associées
+        cursor.execute('DELETE FROM lignes_achat WHERE id_produit = %s', (id,))
+        
+        # Supprimer le produit
+        cursor.execute('DELETE FROM produits WHERE id_produit = %s AND user_id = %s', (id, user_id))
+        
+        conn.commit()
+        flash('Produit supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for('index_produits'))
 
 # --- ROUTES CLIENTS ---
@@ -323,11 +343,28 @@ def supprimer_client(id):
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM clients WHERE id_client = %s AND user_id = %s', (id, session.get('user_id')))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    flash('Client supprimé avec succès !', 'success')
+    user_id = session.get('user_id')
+    try:
+        # Démarrer une transaction
+        conn.start_transaction()
+        
+        # Supprimer d'abord les lignes de vente associées
+        cursor.execute('DELETE FROM lignes_vente WHERE id_vente IN (SELECT id_vente FROM ventes WHERE id_client = %s AND user_id = %s)', (id, user_id))
+        
+        # Supprimer les ventes associées
+        cursor.execute('DELETE FROM ventes WHERE id_client = %s AND user_id = %s', (id, user_id))
+        
+        # Supprimer le client
+        cursor.execute('DELETE FROM clients WHERE id_client = %s AND user_id = %s', (id, user_id))
+        
+        conn.commit()
+        flash('Client supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for('index_clients'))
 
 
@@ -414,11 +451,28 @@ def supprimer_fournisseur(id):
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM fournisseurs WHERE id_fournisseur = %s AND user_id = %s', (id, session.get('user_id')))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    flash('Fournisseur supprimé avec succès !', 'success')
+    user_id = session.get('user_id')
+    try:
+        # Démarrer une transaction
+        conn.start_transaction()
+        
+        # Supprimer d'abord les lignes d'achat associées
+        cursor.execute('DELETE FROM lignes_achat WHERE id_achat IN (SELECT id_achat FROM achats WHERE id_fournisseur = %s AND user_id = %s)', (id, user_id))
+        
+        # Supprimer les achats associés
+        cursor.execute('DELETE FROM achats WHERE id_fournisseur = %s AND user_id = %s', (id, user_id))
+        
+        # Supprimer le fournisseur
+        cursor.execute('DELETE FROM fournisseurs WHERE id_fournisseur = %s AND user_id = %s', (id, user_id))
+        
+        conn.commit()
+        flash('Fournisseur supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for('index_fournisseurs'))
 
 
@@ -696,11 +750,24 @@ def modifier_stock(id):
 def supprimer_stock(id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM stocks WHERE id_stock = %s', (id,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    flash('Stock supprimé avec succès !', 'success')
+    try:
+        # Démarrer une transaction
+        conn.start_transaction()
+        
+        # Supprimer d'abord les mouvements de stock associés
+        cursor.execute('DELETE FROM mouvements_stock WHERE id_stock = %s', (id,))
+        
+        # Supprimer le stock
+        cursor.execute('DELETE FROM stocks WHERE id_stock = %s', (id,))
+        
+        conn.commit()
+        flash('Stock supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for('index_stocks'))
 
 
@@ -1349,13 +1416,47 @@ def ajouter_vente():
     user_id = session.get('user_id')
 
     if request.method == 'POST':
-        id_client = request.form['id_client']
-        produits_ids = request.form.getlist('produits[]')
-        quantites = request.form.getlist('quantites[]')
+        type_client = request.form['type_client']
+        id_client = None
+        client_temporaire_nom = None
         
         try:
             # Démarrer une transaction
             conn.start_transaction()
+            
+            # Gérer le client selon le type
+            if type_client == 'existant':
+                id_client = request.form['id_client']
+                if not id_client:
+                    raise Exception("Veuillez sélectionner un client existant")
+            
+            elif type_client == 'nouveau':
+                nouveau_nom = request.form['nouveau_nom']
+                nouveau_prenom = request.form['nouveau_prenom']
+                nouveau_telephone = request.form.get('nouveau_telephone', '')
+                nouveau_adresse = request.form.get('nouveau_adresse', '')
+                
+                if not nouveau_nom or not nouveau_prenom:
+                    raise Exception("Le nom et le prénom sont obligatoires pour un nouveau client")
+                
+                # Créer le nouveau client
+                cursor.execute('''
+                    INSERT INTO clients (nom, prenom, telephone, adresse, user_id)
+                    VALUES (%s, %s, %s, %s, %s)
+                ''', (nouveau_nom, nouveau_prenom, nouveau_telephone, nouveau_adresse, user_id))
+                id_client = cursor.lastrowid
+                flash('Nouveau client créé avec succès !', 'success')
+            
+            elif type_client == 'temporaire':
+                client_temporaire_nom = request.form['client_temporaire_nom']
+                if not client_temporaire_nom:
+                    raise Exception("Le nom du client temporaire est obligatoire")
+                # Pour les clients temporaires, on utilise NULL comme id_client
+                # et on stockera le nom dans une autre colonne ou on utilisera un client fictif
+                # Pour l'instant, on utilisera NULL
+            
+            produits_ids = request.form.getlist('produits[]')
+            quantites = request.form.getlist('quantites[]')
             
             total_vente = 0
             # 1. Créer la vente avec AUTO_INCREMENT
@@ -1393,6 +1494,15 @@ def ajouter_vente():
             # 3. Mettre à jour le total de la vente
             cursor.execute('UPDATE ventes SET total = %s WHERE id_vente = %s AND user_id = %s', (total_vente, id_vente, user_id))
             
+            # Si c'est un client temporaire, on peut stocker le nom dans une colonne notes ou similaire
+            # Pour l'instant, on va supposer que la table ventes a une colonne client_temporaire ou on peut l'ajouter
+            if client_temporaire_nom:
+                try:
+                    cursor.execute('UPDATE ventes SET client_temporaire = %s WHERE id_vente = %s', (client_temporaire_nom, id_vente))
+                except mysql.connector.Error:
+                    # La colonne n'existe pas encore, on peut l'ajouter ou ignorer
+                    pass
+            
             conn.commit()
             flash('Vente enregistrée avec succès !', 'success')
             return redirect(url_for('facture', id=id_vente))
@@ -1422,11 +1532,11 @@ def facture(id):
     cursor = conn.cursor(dictionary=True)
     user_id = session.get('user_id')
     
-    # Récupérer les infos de la vente
+    # Récupérer les infos de la vente avec LEFT JOIN pour gérer les clients temporaires
     cursor.execute('''
         SELECT v.*, c.nom as nom_client, c.prenom as prenom_client, c.telephone, c.adresse
         FROM ventes v 
-        JOIN clients c ON v.id_client = c.id_client
+        LEFT JOIN clients c ON v.id_client = c.id_client
         WHERE v.id_vente = %s AND v.user_id = %s
     ''', (id, user_id))
     vente = cursor.fetchone()
@@ -1445,9 +1555,13 @@ def facture(id):
     ''', (id,))
     lignes = cursor.fetchall()
     
+    # Récupérer les paramètres de l'utilisateur pour les infos de l'entreprise
+    cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (user_id,))
+    parametres = cursor.fetchone()
+    
     cursor.close()
     conn.close()
-    return render_template('ventes/facture.html', vente=vente, lignes=lignes)
+    return render_template('ventes/facture.html', vente=vente, lignes=lignes, parametres=parametres)
 
 
 @app.route('/rapports')
@@ -1615,10 +1729,14 @@ def index_inventaires():
     cursor = conn.cursor(dictionary=True)
     user_id = session.get('user_id')
     
+    # Récupérer la liste des inventaires (en-têtes)
     cursor.execute('''
-        SELECT * FROM inventaires
-        WHERE user_id = %s
-        ORDER BY date_inventaire DESC
+        SELECT i.*, 
+               (SELECT COUNT(*) FROM inventaire_details WHERE id_inventaires = i.id_inventaires) as nb_articles,
+               (SELECT SUM(montant) FROM inventaire_details WHERE id_inventaires = i.id_inventaires) as total_montant
+        FROM inventaires i
+        WHERE i.user_id = %s
+        ORDER BY i.date_inventaire DESC, i.created_at DESC
     ''', (user_id,))
     inventaires = cursor.fetchall()
     cursor.close()
@@ -1628,6 +1746,71 @@ def index_inventaires():
 @app.route('/inventaires/ajouter', methods=['GET', 'POST'])
 @login_required
 def ajouter_inventaire():
+    if request.method == 'POST':
+        reference = request.form['reference']
+        titre = request.form['titre']
+        date_inventaire = request.form['date_inventaire']
+        user_id = session.get('user_id')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Créer l'en-tête de l'inventaire
+            cursor.execute('''
+                INSERT INTO inventaires (reference, titre, date_inventaire, statut, user_id)
+                VALUES (%s, %s, %s, 'EN_COURS', %s)
+            ''', (reference, titre, date_inventaire, user_id))
+            id_inventaires = cursor.lastrowid
+            conn.commit()
+            flash('Inventaire créé avec succès !', 'success')
+            return redirect(url_for('details_inventaire', id=id_inventaires))
+        except mysql.connector.Error as err:
+            flash(f"Erreur : {err}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    return render_template('inventaires/ajouter.html')
+
+@app.route('/inventaires/<int:id>')
+@login_required
+def details_inventaire(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer l'en-tête de l'inventaire
+    cursor.execute('SELECT * FROM inventaires WHERE id_inventaires = %s AND user_id = %s', (id, user_id))
+    inventaire = cursor.fetchone()
+    
+    if not inventaire:
+        cursor.close()
+        conn.close()
+        return "Inventaire non trouvé", 404
+    
+    # Récupérer les détails de l'inventaire
+    cursor.execute('''
+        SELECT * FROM inventaire_details
+        WHERE id_inventaires = %s
+        ORDER BY date_inventaire DESC
+    ''', (id,))
+    details = cursor.fetchall()
+    
+    # Calculer les totaux
+    cursor.execute('''
+        SELECT COUNT(*) as nb_articles, SUM(quantite) as total_quantite, SUM(montant) as total_montant
+        FROM inventaire_details
+        WHERE id_inventaires = %s
+    ''', (id,))
+    stats = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    return render_template('inventaires/details.html', inventaire=inventaire, details=details, stats=stats)
+
+@app.route('/inventaires/<int:id>/ajouter_produit', methods=['GET', 'POST'])
+@login_required
+def ajouter_produit_inventaire(id):
     if request.method == 'POST':
         nom_produit = request.form['nom_produit']
         quantite = request.form['quantite']
@@ -1639,23 +1822,23 @@ def ajouter_inventaire():
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO inventaires (nom_produit, quantite, prix_achat, montant, user_id)
-                VALUES (%s, %s, %s, %s, %s)
-            ''', (nom_produit, quantite, prix_achat, montant, user_id))
+                INSERT INTO inventaire_details (nom_produit, quantite, prix_achat, montant, user_id, id_inventaires)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            ''', (nom_produit, quantite, prix_achat, montant, user_id, id))
             conn.commit()
-            flash('Inventaire ajouté avec succès !', 'success')
+            flash('Produit ajouté à l\'inventaire avec succès !', 'success')
         except mysql.connector.Error as err:
             flash(f"Erreur : {err}", 'danger')
         finally:
             cursor.close()
             conn.close()
-        return redirect(url_for('index_inventaires'))
+        return redirect(url_for('details_inventaire', id=id))
     
-    return render_template('inventaires/ajouter.html')
+    return render_template('inventaires/ajouter_produit.html', id_inventaire=id)
 
-@app.route('/inventaires/modifier/<int:id>', methods=['GET', 'POST'])
+@app.route('/inventaires/modifier_produit/<int:id>', methods=['GET', 'POST'])
 @login_required
-def modifier_inventaire(id):
+def modifier_produit_inventaire(id):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     user_id = session.get('user_id')
@@ -1667,17 +1850,73 @@ def modifier_inventaire(id):
         montant = float(quantite) * float(prix_achat)
         
         cursor.execute('''
-            UPDATE inventaires
+            UPDATE inventaire_details
             SET nom_produit=%s, quantite=%s, prix_achat=%s, montant=%s
             WHERE id_inventaire=%s AND user_id=%s
         ''', (nom_produit, quantite, prix_achat, montant, id, user_id))
         conn.commit()
         cursor.close()
         conn.close()
-        flash('Inventaire modifié avec succès !', 'success')
-        return redirect(url_for('index_inventaires'))
+        flash('Produit modifié avec succès !', 'success')
+        
+        # Récupérer l'id_inventaires pour rediriger
+        return redirect(url_for('details_inventaire', id=request.form['id_inventaires']))
     
-    cursor.execute('SELECT * FROM inventaires WHERE id_inventaire = %s AND user_id = %s', (id, user_id))
+    cursor.execute('SELECT * FROM inventaire_details WHERE id_inventaire = %s AND user_id = %s', (id, user_id))
+    detail = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if detail is None:
+        return "Produit non trouvé", 404
+        
+    return render_template('inventaires/modifier_produit.html', detail=detail)
+
+@app.route('/inventaires/supprimer_produit/<int:id>')
+@login_required
+def supprimer_produit_inventaire(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    # Récupérer l'id_inventaires avant suppression
+    cursor.execute('SELECT id_inventaires FROM inventaire_details WHERE id_inventaire = %s', (id,))
+    result = cursor.fetchone()
+    id_inventaires = result['id_inventaires'] if result else None
+    
+    cursor.execute('DELETE FROM inventaire_details WHERE id_inventaire = %s AND user_id = %s', (id, session.get('user_id')))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    flash('Produit supprimé avec succès !', 'success')
+    
+    if id_inventaires:
+        return redirect(url_for('details_inventaire', id=id_inventaires))
+    return redirect(url_for('index_inventaires'))
+
+@app.route('/inventaires/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_inventaire(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    if request.method == 'POST':
+        reference = request.form['reference']
+        titre = request.form['titre']
+        date_inventaire = request.form['date_inventaire']
+        
+        cursor.execute('''
+            UPDATE inventaires
+            SET reference=%s, titre=%s, date_inventaire=%s
+            WHERE id_inventaires=%s AND user_id=%s
+        ''', (reference, titre, date_inventaire, id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Inventaire modifié avec succès !', 'success')
+        return redirect(url_for('details_inventaire', id=id))
+    
+    cursor.execute('SELECT * FROM inventaires WHERE id_inventaires = %s AND user_id = %s', (id, user_id))
     inventaire = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -1687,12 +1926,47 @@ def modifier_inventaire(id):
         
     return render_template('inventaires/modifier.html', inventaire=inventaire)
 
+@app.route('/inventaires/<int:id>/valider')
+@login_required
+def valider_inventaire(id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    user_id = session.get('user_id')
+    
+    try:
+        # Récupérer le statut actuel
+        cursor.execute('SELECT statut FROM inventaires WHERE id_inventaires = %s AND user_id = %s', (id, user_id))
+        result = cursor.fetchone()
+        
+        if result:
+            current_statut = result[0]
+            # Inverser le statut
+            new_statut = 'VALIDE' if current_statut == 'EN_COURS' else 'EN_COURS'
+            
+            cursor.execute('''
+                UPDATE inventaires
+                SET statut = %s
+                WHERE id_inventaires = %s AND user_id = %s
+            ''', (new_statut, id, user_id))
+            conn.commit()
+            flash(f"Inventaire {'validé' if new_statut == 'VALIDE' else 'dévalidé'} avec succès !", 'success')
+    except mysql.connector.Error as err:
+        flash(f"Erreur : {err}", 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+    return redirect(url_for('details_inventaire', id=id))
+
 @app.route('/inventaires/supprimer/<int:id>')
 @login_required
 def supprimer_inventaire(id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM inventaires WHERE id_inventaire = %s AND user_id = %s', (id, session.get('user_id')))
+    
+    # Supprimer d'abord les détails
+    cursor.execute('DELETE FROM inventaire_details WHERE id_inventaires = %s AND user_id = %s', (id, session.get('user_id')))
+    # Puis supprimer l'en-tête
+    cursor.execute('DELETE FROM inventaires WHERE id_inventaires = %s AND user_id = %s', (id, session.get('user_id')))
     conn.commit()
     cursor.close()
     conn.close()
@@ -1706,19 +1980,24 @@ def rapport_inventaires():
     cursor = conn.cursor(dictionary=True)
     user_id = session.get('user_id')
     
-    # Statistiques générales
+    # Statistiques générales sur tous les inventaires
     cursor.execute('''
-        SELECT COUNT(*) as nb_articles, SUM(quantite) as total_quantite, SUM(montant) as total_montant
+        SELECT COUNT(*) as nb_inventaires, 
+               (SELECT SUM(montant) FROM inventaire_details) as total_montant_global,
+               (SELECT SUM(quantite) FROM inventaire_details) as total_quantite_global
         FROM inventaires
         WHERE user_id = %s
     ''', (user_id,))
     stats = cursor.fetchone()
     
-    # Liste des inventaires
+    # Liste des inventaires avec leurs totaux
     cursor.execute('''
-        SELECT * FROM inventaires
-        WHERE user_id = %s
-        ORDER BY date_inventaire DESC
+        SELECT i.*, 
+               (SELECT COUNT(*) FROM inventaire_details WHERE id_inventaires = i.id_inventaires) as nb_articles,
+               (SELECT SUM(montant) FROM inventaire_details WHERE id_inventaires = i.id_inventaires) as total_montant
+        FROM inventaires i
+        WHERE i.user_id = %s
+        ORDER BY i.date_inventaire DESC
     ''', (user_id,))
     inventaires = cursor.fetchall()
     
@@ -1812,11 +2091,25 @@ def modifier_caisse(id):
 def supprimer_caisse(id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('DELETE FROM caisses WHERE id_caisse = %s AND user_id = %s', (id, session.get('user_id')))
-    conn.commit()
-    cursor.close()
-    conn.close()
-    flash('Caisse supprimée avec succès !', 'success')
+    user_id = session.get('user_id')
+    try:
+        # Démarrer une transaction
+        conn.start_transaction()
+        
+        # Supprimer d'abord les mouvements de caisse associés
+        cursor.execute('DELETE FROM mouvements_caisse WHERE id_caisse = %s AND user_id = %s', (id, user_id))
+        
+        # Supprimer la caisse
+        cursor.execute('DELETE FROM caisses WHERE id_caisse = %s AND user_id = %s', (id, user_id))
+        
+        conn.commit()
+        flash('Caisse supprimée avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Erreur lors de la suppression : {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        conn.close()
     return redirect(url_for('index_caisses'))
 
 

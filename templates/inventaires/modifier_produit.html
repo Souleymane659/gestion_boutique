@@ -1,0 +1,31 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Modifier le Produit</h2>
+        <form action="{{ url_for('modifier_produit_inventaire', id=detail.id_inventaire) }}" method="POST">
+            <input type="hidden" name="id_inventaires" value="{{ detail.id_inventaires }}">
+            
+            <div class="form-group">
+                <label for="nom_produit">Nom du Produit</label>
+                <input type="text" name="nom_produit" id="nom_produit" value="{{ detail.nom_produit }}" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="quantite">Quantité</label>
+                    <input type="number" name="quantite" id="quantite" value="{{ detail.quantite }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="prix_achat">Prix d'Achat (FCFA)</label>
+                    <input type="number" step="0.01" name="prix_achat" id="prix_achat" value="{{ detail.prix_achat }}" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Modifier le Produit</button>
+            <a href="{{ url_for('details_inventaire', id=detail.id_inventaires) }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

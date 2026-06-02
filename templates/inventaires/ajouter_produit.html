@@ -1,0 +1,30 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Ajouter un Produit à l'Inventaire</h2>
+        <form action="{{ url_for('ajouter_produit_inventaire', id=id_inventaire) }}" method="POST">
+            
+            <div class="form-group">
+                <label for="nom_produit">Nom du Produit</label>
+                <input type="text" name="nom_produit" id="nom_produit" placeholder="Ex: Sac à main" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="quantite">Quantité</label>
+                    <input type="number" name="quantite" id="quantite" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="prix_achat">Prix d'Achat (FCFA)</label>
+                    <input type="number" step="0.01" name="prix_achat" id="prix_achat" placeholder="0.00" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Ajouter le Produit</button>
+            <a href="{{ url_for('details_inventaire', id=id_inventaire) }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

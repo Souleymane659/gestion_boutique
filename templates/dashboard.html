@@ -1,43 +1,6 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<div class="card">
-    <h2>Statistiques</h2>
-    <ul>
-        <li>Produits: {{ nb_produits }}</li>
-        <li>Clients: {{ nb_clients }}</li>
-        <li>Fournisseurs: {{ nb_fournisseurs }}</li>
-        <li>Chiffre d'Affaires: {{ ca }}</li>
-    </ul>
-</div>
-
-<div class="card" style="margin-top: 2rem;">
-    <h2>5 dernières ventes</h2>
-    {% if ventes %}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Date</th>
-                <th>Client</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for v in ventes %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ v.date_vente }}</td>
-                <td>{{ v.nom_client }} {{ v.prenom_client }}</td>
-                <td>{{ v.total }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>Aucune vente récente.</p>
-    {% endif %}
-</div>
 
 <div class="dashboard-grid" style="margin-top: 2rem;">
     <!-- Card 1: Clients -->
@@ -98,6 +61,18 @@
         </div>
         <h3>Gestion Stocks</h3>
         <p>Voir et gérer les stocks</p>
+    </a>
+
+     <!-- Card 5: Caisse -->
+    <a href="{{ url_for('index_caisses') }}" class="dashboard-card">
+        <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M20 2H4c-1 0-2 .9-2 2v3.01c0 .72.43 1.34 1 1.69V20c0 1.1 1.1 2 2 2h14c.9 0 2-.9 2-2V8.7c.57-.35 1-.97 1-1.69V4c0-1.1-1-2-2-2zm-5 12H9v-2h6v2zm5-7H4V4h16v3z" />
+            </svg>
+        </div>
+        <h3>Gestion Caisse</h3>
+        <p>Voir et gérer la Caisse</p>
     </a>
 
     <!-- Card 6: Mouvements Stock -->

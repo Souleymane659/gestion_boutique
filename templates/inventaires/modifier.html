@@ -3,27 +3,26 @@
 {% block content %}
 <div style="max-width: 600px; margin: 0 auto;">
     <div class="card">
-        <h2>Modifier l'Inventaire #{{ inventaire.id_inventaire }}</h2>
-        <form action="{{ url_for('modifier_inventaire', id=inventaire.id_inventaire) }}" method="POST">
+        <h2>Modifier l'Inventaire</h2>
+        <form action="{{ url_for('modifier_inventaire', id=inventaire.id_inventaires) }}" method="POST">
             
             <div class="form-group">
-                <label for="nom_produit">Nom du Produit</label>
-                <input type="text" name="nom_produit" id="nom_produit" value="{{ inventaire.nom_produit }}" required>
+                <label for="reference">Référence</label>
+                <input type="text" name="reference" id="reference" value="{{ inventaire.reference }}" required>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div class="form-group">
-                    <label for="quantite">Quantité</label>
-                    <input type="number" name="quantite" id="quantite" value="{{ inventaire.quantite }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="prix_achat">Prix d'Achat (FCFA)</label>
-                    <input type="number" step="0.01" name="prix_achat" id="prix_achat" value="{{ inventaire.prix_achat }}" required>
-                </div>
+            <div class="form-group">
+                <label for="titre">Titre</label>
+                <input type="text" name="titre" id="titre" value="{{ inventaire.titre }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="date_inventaire">Date de l'inventaire</label>
+                <input type="date" name="date_inventaire" id="date_inventaire" value="{{ inventaire.date_inventaire.strftime('%Y-%m-%d') }}" required>
             </div>
 
             <button type="submit" class="btn-submit">Mettre à jour l'Inventaire</button>
-            <a href="{{ url_for('index_inventaires') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+            <a href="{{ url_for('details_inventaire', id=inventaire.id_inventaires) }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
         </form>
     </div>
 </div>

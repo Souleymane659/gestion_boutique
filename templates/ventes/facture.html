@@ -284,19 +284,26 @@
             <p>#INV-{{ "%05d"|format(vente.id_vente) }}</p>
         </div>
         <div class="company-info">
-            <h2>GESTION</h2>
-            <p>Bamako, Mali<br>
-            Tél: +223 79 37 84 71<br>
-            Email: souleymaneongoiba659@gmail.com</p>
+            <h2>{{ parametres.nom_boutique if parametres and parametres.nom_boutique else 'GESTION' }}</h2>
+            <p>{{ parametres.adresse if parametres and parametres.adresse else 'Bamako, Mali' }}<br>
+            Tél: {{ parametres.telephone if parametres and parametres.telephone else '+223 79 37 84 71' }}<br>
+            Email: {{ parametres.email if parametres and parametres.email else 'souleymaneongoiba659@gmail.com' }}</p>
         </div>
     </div>
 
     <div class="invoice-details">
         <div class="detail-box bill-to">
             <h4>Facturer à</h4>
+            {% if vente.nom_client %}
             <p class="client-name">{{ vente.nom_client }} {{ vente.prenom_client }}</p>
             <p>{{ vente.adresse or 'Adresse non renseignée' }}<br>
             Tél: {{ vente.telephone or 'Non renseigné' }}</p>
+            {% elif vente.client_temporaire %}
+            <p class="client-name">{{ vente.client_temporaire }}</p>
+            <p>Client temporaire (non enregistré)</p>
+            {% else %}
+            <p class="client-name">Client non spécifié</p>
+            {% endif %}
         </div>
         <div class="detail-box invoice-info">
             <h4>Détails de la facture</h4>

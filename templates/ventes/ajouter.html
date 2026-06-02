@@ -6,14 +6,46 @@
     <form action="{{ url_for('ajouter_vente') }}" method="POST" id="vente-form">
         <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
             <div class="form-group">
+                <label>Type de Client</label>
+                <select name="type_client" id="type_client" required onchange="toggleClientFields()" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
+                    <option value="existant">Client existant</option>
+                    <option value="nouveau">Nouveau client</option>
+                    
+                </select>
+            </div>
+
+            <div class="form-group" id="client-existant">
                 <label for="id_client">Client</label>
-                <select name="id_client" id="id_client" required style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
+                <select name="id_client" id="id_client" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
                     <option value="">Sélectionner un client</option>
                     {% for client in clients %}
                     <option value="{{ client.id_client }}">{{ client.nom }} {{ client.prenom }}</option>
                     {% endfor %}
                 </select>
             </div>
+
+            <div id="client-nouveau" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label for="nouveau_nom">Nom</label>
+                        <input type="text" name="nouveau_nom" id="nouveau_nom" placeholder="Nom du client" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
+                    </div>
+                    <div class="form-group">
+                        <label for="nouveau_prenom">Prénom</label>
+                        <input type="text" name="nouveau_prenom" id="nouveau_prenom" placeholder="Prénom du client" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="nouveau_telephone">Téléphone</label>
+                    <input type="text" name="nouveau_telephone" id="nouveau_telephone" placeholder="Téléphone du client" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
+                </div>
+                <div class="form-group">
+                    <label for="nouveau_adresse">Adresse</label>
+                    <input type="text" name="nouveau_adresse" id="nouveau_adresse" placeholder="Adresse du client" style="width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 12px; color: white;">
+                </div>
+            </div>
+
+            
         </div>
 
 
@@ -58,6 +90,19 @@
 </div>
 
 <script>
+function toggleClientFields() {
+    const typeClient = document.getElementById('type_client').value;
+    document.getElementById('client-existant').style.display = typeClient === 'existant' ? 'block' : 'none';
+    document.getElementById('client-nouveau').style.display = typeClient === 'nouveau' ? 'block' : 'none';
+    document.getElementById('client-temporaire').style.display = typeClient === 'temporaire' ? 'block' : 'none';
+    
+    // Toggle required attributes
+    document.getElementById('id_client').required = typeClient === 'existant';
+    document.getElementById('nouveau_nom').required = typeClient === 'nouveau';
+    document.getElementById('nouveau_prenom').required = typeClient === 'nouveau';
+    document.getElementById('client_temporaire_nom').required = typeClient === 'temporaire';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('produits-container');
     const addBtn = document.getElementById('add-ligne');
