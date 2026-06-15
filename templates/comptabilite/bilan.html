@@ -1,0 +1,166 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2>Bilan Comptable</h2>
+            <span class="badge badge-stock">Actif et Passif</span>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="background: var(--primary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Ajouter une Écriture
+            </a>
+            <a href="{{ url_for('index_comptabilite') }}" class="btn-add" style="background: var(--secondary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtres par date -->
+    <form method="GET" style="margin-bottom: 2rem; padding: 1.5rem; background: var(--input-bg); border-radius: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div>
+                <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Date Début</label>
+                <input type="date" name="date_debut" value="{{ date_debut or '' }}" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+            </div>
+            <div>
+                <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Date Fin</label>
+                <input type="date" name="date_fin" value="{{ date_fin or '' }}" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+            </div>
+            <button type="submit" class="btn-add" style="font-size: 1rem; padding: 0.8rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                Filtrer
+            </button>
+        </div>
+    </form>
+
+    <div class="search-container" style="margin-bottom: 1.5rem;">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchBilanInput" class="search-input" placeholder="Rechercher un compte par numéro, intitulé ou solde..." onkeyup="filterBilanTables()">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- ACTIF -->
+        <div>
+            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px 12px 0 0; color: white; margin-bottom: 0;">
+                <h3 style="margin: 0; font-size: 1.4rem;">ACTIF</h3>
+            </div>
+            <div style="border: 2px solid #43e97b; border-top: none; border-radius: 0 0 12px 12px; padding: 0;">
+                <table style="font-size: 1.1rem; width: 100%;">
+                    <thead>
+                        <tr style="font-size: 1.1rem; padding: 1rem; background: #f0fdf4;">
+                            <th style="padding: 0.8rem; width: 120px;">N° Compte</th>
+                            <th style="padding: 0.8rem; width: 200px;">Intitulé</th>
+                            <th style="padding: 0.8rem; width: 150px; text-align: right;">Solde</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for compte in actif %}
+                        <tr style="padding: 0.8rem;">
+                            <td style="font-weight: 600; font-size: 1rem; padding: 0.8rem;">{{ compte.numero_compte }}</td>
+                            <td style="font-size: 1rem; padding: 0.8rem;">{{ compte.intitule }}</td>
+                            <td style="font-weight: 700; color: var(--success); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(compte.solde) }} FCFA</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not actif %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 1rem;">
+                                Aucun compte d'actif.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f0fdf4; font-weight: 700;">
+                            <td colspan="2" style="padding: 0.8rem; text-align: right; font-size: 1.2rem;">TOTAL ACTIF:</td>
+                            <td style="padding: 0.8rem; text-align: right; color: var(--success); font-size: 1.3rem;">{{ '{:,.2f}'.format(total_actif) }} FCFA</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- PASSIF -->
+        <div>
+            <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px 12px 0 0; color: white; margin-bottom: 0;">
+                <h3 style="margin: 0; font-size: 1.4rem;">PASSIF</h3>
+            </div>
+            <div style="border: 2px solid #fa709a; border-top: none; border-radius: 0 0 12px 12px; padding: 0;">
+                <table style="font-size: 1.1rem; width: 100%;">
+                    <thead>
+                        <tr style="font-size: 1.1rem; padding: 1rem; background: #fff1f2;">
+                            <th style="padding: 0.8rem; width: 120px;">N° Compte</th>
+                            <th style="padding: 0.8rem; width: 200px;">Intitulé</th>
+                            <th style="padding: 0.8rem; width: 150px; text-align: right;">Solde</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for compte in passif %}
+                        <tr style="padding: 0.8rem;">
+                            <td style="font-weight: 600; font-size: 1rem; padding: 0.8rem;">{{ compte.numero_compte }}</td>
+                            <td style="font-size: 1rem; padding: 0.8rem;">{{ compte.intitule }}</td>
+                            <td style="font-weight: 700; color: var(--danger); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(compte.solde) }} FCFA</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not passif %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 1rem;">
+                                Aucun compte de passif.
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #fff1f2; font-weight: 700;">
+                            <td colspan="2" style="padding: 0.8rem; text-align: right; font-size: 1.2rem;">TOTAL PASSIF:</td>
+                            <td style="padding: 0.8rem; text-align: right; color: var(--danger); font-size: 1.3rem;">{{ '{:,.2f}'.format(total_passif) }} FCFA</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vérification de l'équilibre -->
+    <div style="margin-top: 2rem; padding: 1.5rem; border-radius: 12px; {% if total_actif == total_passif %}background: #d1fae5; border: 2px solid #059669;{% else %}background: #fee2e2; border: 2px solid #dc2626;{% endif %}">
+        {% if total_actif == total_passif %}
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            <h3 style="margin: 0; color: #059669; font-size: 1.3rem;">✓ Bilan Équilibré</h3>
+        </div>
+        <p style="margin: 0.5rem 0 0 0; text-align: center; color: #059669; font-size: 1.1rem;">Total Actif ({{ '{:,.2f}'.format(total_actif) }} FCFA) = Total Passif ({{ '{:,.2f}'.format(total_passif) }} FCFA)</p>
+        {% else %}
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <h3 style="margin: 0; color: #dc2626; font-size: 1.3rem;">⚠️ Bilan Déséquilibré</h3>
+        </div>
+        <p style="margin: 0.5rem 0 0 0; text-align: center; color: #dc2626; font-size: 1.1rem;">Écart de {{ '{:,.2f}'.format((total_actif - total_passif) if total_actif > total_passif else (total_passif - total_actif)) }} FCFA entre Actif et Passif</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterBilanTables() {
+    const input = document.getElementById('searchBilanInput');
+    const filter = input.value.trim().toLowerCase();
+    const tables = [document.getElementById('actifTable'), document.getElementById('passifTable')];
+
+    tables.forEach(table => {
+        if (!table) return;
+        const rows = table.getElementsByTagName('tr');
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            if (!cells.length) continue;
+            const numero = (cells[0].textContent || cells[0].innerText).toLowerCase();
+            const intitule = (cells[1].textContent || cells[1].innerText).toLowerCase();
+            const solde = (cells[2].textContent || cells[2].innerText).toLowerCase();
+            const rowText = `${numero} ${intitule} ${solde}`;
+            rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

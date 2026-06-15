@@ -1106,6 +1106,7 @@ def ajouter_facture():
     if request.method == 'POST':
         id_client = request.form.get('id_client')
         statut = request.form.get('statut', 'NON_PAYEE')
+        montant_paye = request.form.get('montant_paye', 0)
         produits = request.form.getlist('id_produit[]')
         quantites = request.form.getlist('quantite[]')
         prix_unitaires = request.form.getlist('prix_unitaire[]')
@@ -1148,6 +1149,19 @@ def ajouter_facture():
             # Mettre à jour le montant total
             cursor.execute('UPDATE factures SET montant_total = %s WHERE id_facture = %s', (montant_total, id_facture))
             
+            # Calculer et mettre à jour le montant payé et restant
+            if statut == 'PARTIELLE':
+                montant_paye = float(montant_paye) if montant_paye else 0
+                montant_restant = montant_total - montant_paye
+                cursor.execute('UPDATE factures SET montant_paye = %s, montant_restant = %s WHERE id_facture = %s', 
+                              (montant_paye, montant_restant, id_facture))
+            elif statut == 'PAYEE':
+                cursor.execute('UPDATE factures SET montant_paye = %s, montant_restant = %s WHERE id_facture = %s', 
+                              (montant_total, 0, id_facture))
+            else:  # NON_PAYEE
+                cursor.execute('UPDATE factures SET montant_paye = 0, montant_restant = %s WHERE id_facture = %s', 
+                              (montant_total, id_facture))
+            
             conn.commit()
             flash('Facture ajoutée avec succès !', 'success')
             return redirect(url_for('index_factures'))
@@ -1176,6 +1190,7 @@ def modifier_facture(id):
     if request.method == 'POST':
         id_client = request.form.get('id_client')
         statut = request.form.get('statut', 'NON_PAYEE')
+        montant_paye = request.form.get('montant_paye', 0)
         produits = request.form.getlist('id_produit[]')
         quantites = request.form.getlist('quantite[]')
         prix_unitaires = request.form.getlist('prix_unitaire[]')
@@ -1215,6 +1230,19 @@ def modifier_facture(id):
             
             # Mettre à jour le montant total
             cursor.execute('UPDATE factures SET montant_total = %s WHERE id_facture = %s', (montant_total, id))
+            
+            # Calculer et mettre à jour le montant payé et restant
+            if statut == 'PARTIELLE':
+                montant_paye = float(montant_paye) if montant_paye else 0
+                montant_restant = montant_total - montant_paye
+                cursor.execute('UPDATE factures SET montant_paye = %s, montant_restant = %s WHERE id_facture = %s', 
+                              (montant_paye, montant_restant, id))
+            elif statut == 'PAYEE':
+                cursor.execute('UPDATE factures SET montant_paye = %s, montant_restant = %s WHERE id_facture = %s', 
+                              (montant_total, 0, id))
+            else:  # NON_PAYEE
+                cursor.execute('UPDATE factures SET montant_paye = 0, montant_restant = %s WHERE id_facture = %s', 
+                              (montant_total, id))
             
             conn.commit()
             flash('Facture modifiée avec succès !', 'success')
@@ -2328,6 +2356,702 @@ def rapport_caisses():
     conn.close()
     
     return render_template('caisses/rapport.html', stats=stats, caisses=caisses)
+
+
+# --- MODULE COMPTABILITÉ ---
+
+@app.route('/comptabilite')
+@login_required
+def index_comptabilite():
+    """Page d'accueil du module comptabilité"""
+    return render_template('comptabilite/index.html')
+
+
+# --- GESTION DU PLAN COMPTABLE ---
+
+@app.route('/comptabilite/plan_comptable')
+@login_required
+def index_plan_comptable():
+    """Index du Plan Comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+    comptes = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('comptabilite/plan_comptable/index.html', comptes=comptes)
+
+
+@app.route('/comptabilite/plan_comptable/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_compte():
+    """Ajouter un compte au Plan Comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        numero_compte = request.form.get('numero_compte')
+        intitule = request.form.get('intitule')
+        type_compte = request.form.get('type_compte')
+        
+        try:
+            cursor.execute('''
+                INSERT INTO plans_comptables (numero_compte, intitule, type_compte)
+                VALUES (%s, %s, %s)
+            ''', (numero_compte, intitule, type_compte))
+            conn.commit()
+            flash('Compte ajouté avec succès !', 'success')
+            return redirect(url_for('index_plan_comptable'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.close()
+    conn.close()
+    return render_template('comptabilite/plan_comptable/ajouter.html')
+
+
+@app.route('/comptabilite/plan_comptable/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_compte(id):
+    """Modifier un compte du Plan Comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        numero_compte = request.form.get('numero_compte')
+        intitule = request.form.get('intitule')
+        type_compte = request.form.get('type_compte')
+        
+        try:
+            cursor.execute('''
+                UPDATE plans_comptables 
+                SET numero_compte = %s, intitule = %s, type_compte = %s
+                WHERE id = %s
+            ''', (numero_compte, intitule, type_compte, id))
+            conn.commit()
+            flash('Compte modifié avec succès !', 'success')
+            return redirect(url_for('index_plan_comptable'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('SELECT * FROM plans_comptables WHERE id = %s', (id,))
+    compte = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    if compte is None:
+        flash('Compte non trouvé', 'danger')
+        return redirect(url_for('index_plan_comptable'))
+    
+    return render_template('comptabilite/plan_comptable/modifier.html', compte=compte)
+
+
+@app.route('/comptabilite/plan_comptable/supprimer/<int:id>')
+@login_required
+def supprimer_compte(id):
+    """Supprimer un compte du Plan Comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Vérifier si le compte est utilisé dans des écritures
+        cursor.execute('SELECT COUNT(*) as count FROM lignes_ecritures WHERE compte_id = %s', (id,))
+        count = cursor.fetchone()['count']
+        
+        if count > 0:
+            flash('Impossible de supprimer ce compte car il est utilisé dans des écritures comptables.', 'danger')
+        else:
+            cursor.execute('DELETE FROM plans_comptables WHERE id = %s', (id,))
+            conn.commit()
+            flash('Compte supprimé avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f"Erreur : {str(e)}", 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('index_plan_comptable'))
+
+
+# --- GESTION DES ÉCRITURES COMPTABLES ---
+
+@app.route('/comptabilite/ecritures')
+@login_required
+def index_ecritures():
+    """Index des Écritures Comptables"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute('''
+        SELECT e.*, 
+               (SELECT COUNT(*) FROM lignes_ecritures WHERE ecriture_id = e.id) as nb_lignes
+        FROM ecritures_comptables e
+        ORDER BY e.date_ecriture DESC, e.id DESC
+    ''')
+    ecritures = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('comptabilite/ecritures/index.html', ecritures=ecritures)
+
+
+@app.route('/comptabilite/ecritures/ajouter', methods=['GET', 'POST'])
+@login_required
+def ajouter_ecriture():
+    """Ajouter une écriture comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        date_ecriture = request.form.get('date_ecriture')
+        libelle = request.form.get('libelle')
+        comptes = request.form.getlist('compte_id[]')
+        debits = request.form.getlist('debit[]')
+        credits = request.form.getlist('credit[]')
+        
+        try:
+            conn.start_transaction()
+            
+            # Créer l'écriture
+            cursor.execute('''
+                INSERT INTO ecritures_comptables (date_ecriture, libelle)
+                VALUES (%s, %s)
+            ''', (date_ecriture, libelle))
+            id_ecriture = cursor.lastrowid
+            
+            # Ajouter les lignes
+            for i in range(len(comptes)):
+                if comptes[i] and (debits[i] or credits[i]):
+                    debit = float(debits[i]) if debits[i] else 0
+                    credit = float(credits[i]) if credits[i] else 0
+                    
+                    if debit > 0 or credit > 0:
+                        cursor.execute('''
+                            INSERT INTO lignes_ecritures (ecriture_id, compte_id, debit, credit)
+                            VALUES (%s, %s, %s, %s)
+                        ''', (id_ecriture, comptes[i], debit, credit))
+            
+            conn.commit()
+            flash('Écriture ajoutée avec succès !', 'success')
+            return redirect(url_for('index_ecritures'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+    comptes = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    return render_template('comptabilite/ecritures/ajouter.html', comptes=comptes)
+
+
+@app.route('/comptabilite/ecritures/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
+def modifier_ecriture(id):
+    """Modifier une écriture comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        date_ecriture = request.form.get('date_ecriture')
+        libelle = request.form.get('libelle')
+        comptes = request.form.getlist('compte_id[]')
+        debits = request.form.getlist('debit[]')
+        credits = request.form.getlist('credit[]')
+        
+        try:
+            conn.start_transaction()
+            
+            # Supprimer les anciennes lignes
+            cursor.execute('DELETE FROM lignes_ecritures WHERE ecriture_id = %s', (id,))
+            
+            # Mettre à jour l'écriture
+            cursor.execute('''
+                UPDATE ecritures_comptables 
+                SET date_ecriture = %s, libelle = %s
+                WHERE id = %s
+            ''', (date_ecriture, libelle, id))
+            
+            # Ajouter les nouvelles lignes
+            for i in range(len(comptes)):
+                if comptes[i] and (debits[i] or credits[i]):
+                    debit = float(debits[i]) if debits[i] else 0
+                    credit = float(credits[i]) if credits[i] else 0
+                    
+                    if debit > 0 or credit > 0:
+                        cursor.execute('''
+                            INSERT INTO lignes_ecritures (ecriture_id, compte_id, debit, credit)
+                            VALUES (%s, %s, %s, %s)
+                        ''', (id, comptes[i], debit, credit))
+            
+            conn.commit()
+            flash('Écriture modifiée avec succès !', 'success')
+            return redirect(url_for('index_ecritures'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Erreur : {str(e)}", 'danger')
+        finally:
+            cursor.close()
+            conn.close()
+    
+    cursor.execute('SELECT * FROM ecritures_comptables WHERE id = %s', (id,))
+    ecriture = cursor.fetchone()
+    
+    cursor.execute('SELECT * FROM lignes_ecritures WHERE ecriture_id = %s', (id,))
+    lignes = cursor.fetchall()
+    
+    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+    comptes = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    if ecriture is None:
+        flash('Écriture non trouvée', 'danger')
+        return redirect(url_for('index_ecritures'))
+    
+    return render_template('comptabilite/ecritures/modifier.html', ecriture=ecriture, lignes=lignes, comptes=comptes)
+
+
+@app.route('/comptabilite/ecritures/supprimer/<int:id>')
+@login_required
+def supprimer_ecriture(id):
+    """Supprimer une écriture comptable"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Supprimer les lignes d'abord
+        cursor.execute('DELETE FROM lignes_ecritures WHERE ecriture_id = %s', (id,))
+        # Supprimer l'écriture
+        cursor.execute('DELETE FROM ecritures_comptables WHERE id = %s', (id,))
+        conn.commit()
+        flash('Écriture supprimée avec succès !', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f"Erreur : {str(e)}", 'danger')
+    finally:
+        cursor.close()
+        conn.close()
+    
+    return redirect(url_for('index_ecritures'))
+
+
+@app.route('/comptabilite/journal')
+@login_required
+def journal_comptable():
+    """Journal Comptable - Affiche toutes les écritures par ordre chronologique"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    try:
+        # Récupérer les filtres de date
+        date_debut = request.args.get('date_debut')
+        date_fin = request.args.get('date_fin')
+        
+        # Requête pour récupérer les écritures avec leurs lignes
+        query = '''
+            SELECT e.id, e.date_ecriture, e.libelle,
+                   l.id as ligne_id, l.compte_id, l.debit, l.credit,
+                   p.numero_compte, p.intitule, p.type_compte
+            FROM ecritures_comptables e
+            JOIN lignes_ecritures l ON e.id = l.ecriture_id
+            JOIN plans_comptables p ON l.compte_id = p.id
+            WHERE 1=1
+        '''
+        params = []
+        
+        if date_debut:
+            query += ' AND e.date_ecriture >= %s'
+            params.append(date_debut)
+        if date_fin:
+            query += ' AND e.date_ecriture <= %s'
+            params.append(date_fin)
+        
+        query += ' ORDER BY e.date_ecriture, e.id'
+        
+        cursor.execute(query, params)
+        ecritures = cursor.fetchall()
+        
+        # Calculer les totaux
+        total_debit = sum(e['debit'] or 0 for e in ecritures)
+        total_credit = sum(e['credit'] or 0 for e in ecritures)
+        
+        cursor.close()
+        conn.close()
+        
+        return render_template('comptabilite/journal.html', 
+                              ecritures=ecritures, 
+                              total_debit=total_debit, 
+                              total_credit=total_credit,
+                              date_debut=date_debut,
+                              date_fin=date_fin)
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        flash(f"Erreur : {str(e)}", 'danger')
+        return render_template('comptabilite/journal.html', 
+                              ecritures=[], 
+                              total_debit=0, 
+                              total_credit=0,
+                              date_debut=date_debut,
+                              date_fin=date_fin)
+
+
+@app.route('/comptabilite/grand_livre')
+@login_required
+def grand_livre():
+    """Grand Livre - Regroupe les écritures par compte avec soldes progressifs"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer les filtres de date
+    date_debut = request.args.get('date_debut')
+    date_fin = request.args.get('date_fin')
+    
+    # Récupérer tous les comptes
+    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+    comptes = cursor.fetchall()
+    
+    # Pour chaque compte, récupérer ses écritures
+    grand_livre = []
+    for compte in comptes:
+        query = '''
+            SELECT e.id, e.date_ecriture, e.libelle,
+                   l.debit, l.credit
+            FROM ecritures_comptables e
+            JOIN lignes_ecritures l ON e.id = l.ecriture_id
+            WHERE l.compte_id = %s
+        '''
+        params = [compte['id']]
+        
+        if date_debut:
+            query += ' AND e.date_ecriture >= %s'
+            params.append(date_debut)
+        if date_fin:
+            query += ' AND e.date_ecriture <= %s'
+            params.append(date_fin)
+        
+        query += ' ORDER BY e.date_ecriture, e.id'
+        
+        cursor.execute(query, params)
+        lignes = cursor.fetchall()
+        
+        if lignes:
+            # Calculer le solde progressif
+            solde = 0
+            for ligne in lignes:
+                solde += (ligne['debit'] or 0) - (ligne['credit'] or 0)
+                ligne['solde'] = solde
+            
+            # Calculer le solde final
+            total_debit = sum(l['debit'] or 0 for l in lignes)
+            total_credit = sum(l['credit'] or 0 for l in lignes)
+            solde_final = total_debit - total_credit
+            
+            grand_livre.append({
+                'compte': compte,
+                'lignes': lignes,
+                'total_debit': total_debit,
+                'total_credit': total_credit,
+                'solde_final': solde_final
+            })
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('comptabilite/grand_livre.html', 
+                          grand_livre=grand_livre,
+                          date_debut=date_debut,
+                          date_fin=date_fin)
+
+
+@app.route('/comptabilite/balance')
+@login_required
+def balance_generale():
+    """Balance Générale - Affiche tous les comptes avec leurs totaux et soldes"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    try:
+        # Récupérer les filtres de date
+        date_debut = request.args.get('date_debut')
+        date_fin = request.args.get('date_fin')
+        
+        # Récupérer tous les comptes avec leurs totaux
+        query = '''
+            SELECT p.id, p.numero_compte, p.intitule, p.type_compte,
+                   COALESCE(SUM(l.debit), 0) as total_debit,
+                   COALESCE(SUM(l.credit), 0) as total_credit
+            FROM plans_comptables p
+            LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
+            LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
+            WHERE 1=1
+        '''
+        params = []
+        
+        if date_debut:
+            query += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
+            params.append(date_debut)
+        if date_fin:
+            query += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
+            params.append(date_fin)
+        
+        query += ' GROUP BY p.id ORDER BY p.numero_compte'
+        
+        cursor.execute(query, params)
+        comptes = cursor.fetchall()
+        
+        # Calculer les soldes
+        total_debit_general = 0
+        total_credit_general = 0
+        total_solde_debiteur = 0
+        total_solde_crediteur = 0
+        
+        for compte in comptes:
+            solde = compte['total_debit'] - compte['total_credit']
+            if solde > 0:
+                compte['solde_debiteur'] = solde
+                compte['solde_crediteur'] = 0
+                total_solde_debiteur += solde
+            else:
+                compte['solde_debiteur'] = 0
+                compte['solde_crediteur'] = abs(solde)
+                total_solde_crediteur += abs(solde)
+            
+            total_debit_general += compte['total_debit']
+            total_credit_general += compte['total_credit']
+        
+        cursor.close()
+        conn.close()
+        
+        return render_template('comptabilite/balance.html', 
+                              comptes=comptes,
+                              total_debit_general=total_debit_general,
+                              total_credit_general=total_credit_general,
+                              total_solde_debiteur=total_solde_debiteur,
+                              total_solde_crediteur=total_solde_crediteur,
+                              date_debut=date_debut,
+                              date_fin=date_fin)
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        flash(f"Erreur : {str(e)}", 'danger')
+        return render_template('comptabilite/balance.html', 
+                              comptes=[],
+                              total_debit_general=0,
+                              total_credit_general=0,
+                              total_solde_debiteur=0,
+                              total_solde_crediteur=0,
+                              date_debut=date_debut,
+                              date_fin=date_fin)
+
+
+@app.route('/comptabilite/bilan')
+@login_required
+def bilan_comptable():
+    """Bilan Comptable - Sépare Actif et Passif"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    try:
+        # Récupérer les filtres de date
+        date_debut = request.args.get('date_debut')
+        date_fin = request.args.get('date_fin')
+        
+        # Récupérer les comptes de l'Actif (type_compte = 'ACTIF')
+        query_actif = '''
+            SELECT p.id, p.numero_compte, p.intitule,
+                   COALESCE(SUM(l.debit), 0) as total_debit,
+                   COALESCE(SUM(l.credit), 0) as total_credit
+            FROM plans_comptables p
+            LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
+            LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
+            WHERE p.type_compte = 'ACTIF'
+        '''
+        params_actif = []
+        
+        if date_debut:
+            query_actif += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
+            params_actif.append(date_debut)
+        if date_fin:
+            query_actif += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
+            params_actif.append(date_fin)
+        
+        query_actif += ' GROUP BY p.id ORDER BY p.numero_compte'
+        
+        cursor.execute(query_actif, params_actif)
+        actif = cursor.fetchall()
+        
+        # Récupérer les comptes du Passif (type_compte = 'PASSIF')
+        query_passif = '''
+            SELECT p.id, p.numero_compte, p.intitule,
+                   COALESCE(SUM(l.debit), 0) as total_debit,
+                   COALESCE(SUM(l.credit), 0) as total_credit
+            FROM plans_comptables p
+            LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
+            LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
+            WHERE p.type_compte = 'PASSIF'
+        '''
+        params_passif = []
+        
+        if date_debut:
+            query_passif += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
+            params_passif.append(date_debut)
+        if date_fin:
+            query_passif += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
+            params_passif.append(date_fin)
+        
+        query_passif += ' GROUP BY p.id ORDER BY p.numero_compte'
+        
+        cursor.execute(query_passif, params_passif)
+        passif = cursor.fetchall()
+        
+        # Calculer les totaux
+        total_actif = 0
+        for compte in actif:
+            solde = compte['total_debit'] - compte['total_credit']
+            compte['solde'] = solde
+            total_actif += solde
+        
+        total_passif = 0
+        for compte in passif:
+            solde = compte['total_credit'] - compte['total_debit']
+            compte['solde'] = solde
+            total_passif += solde
+        
+        cursor.close()
+        conn.close()
+        
+        return render_template('comptabilite/bilan.html', 
+                              actif=actif,
+                              passif=passif,
+                              total_actif=total_actif,
+                              total_passif=total_passif,
+                              date_debut=date_debut,
+                              date_fin=date_fin)
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        flash(f"Erreur : {str(e)}", 'danger')
+        return render_template('comptabilite/bilan.html', 
+                              actif=[],
+                              passif=[],
+                              total_actif=0,
+                              total_passif=0,
+                              date_debut=date_debut,
+                              date_fin=date_fin)
+
+
+@app.route('/comptabilite/compte_resultat')
+@login_required
+def compte_resultat():
+    """Compte de Résultat - Calcule Produits et Charges"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    user_id = session.get('user_id')
+    
+    # Récupérer les filtres de date
+    date_debut = request.args.get('date_debut')
+    date_fin = request.args.get('date_fin')
+    
+    # Récupérer les comptes de Produits (type_compte = 'PRODUIT')
+    query_produits = '''
+        SELECT p.id, p.numero_compte, p.intitule,
+               COALESCE(SUM(l.debit), 0) as total_debit,
+               COALESCE(SUM(l.credit), 0) as total_credit
+        FROM plans_comptables p
+        LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
+        LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
+        WHERE p.type_compte = 'PRODUIT'
+    '''
+    params_produits = []
+    
+    if date_debut:
+        query_produits += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
+        params_produits.append(date_debut)
+    if date_fin:
+        query_produits += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
+        params_produits.append(date_fin)
+    
+    query_produits += ' GROUP BY p.id ORDER BY p.numero_compte'
+    
+    cursor.execute(query_produits, params_produits)
+    produits = cursor.fetchall()
+    
+    # Récupérer les comptes de Charges (type_compte = 'CHARGE')
+    query_charges = '''
+        SELECT p.id, p.numero_compte, p.intitule,
+               COALESCE(SUM(l.debit), 0) as total_debit,
+               COALESCE(SUM(l.credit), 0) as total_credit
+        FROM plans_comptables p
+        LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
+        LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
+        WHERE p.type_compte = 'CHARGE'
+    '''
+    params_charges = []
+    
+    if date_debut:
+        query_charges += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
+        params_charges.append(date_debut)
+    if date_fin:
+        query_charges += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
+        params_charges.append(date_fin)
+    
+    query_charges += ' GROUP BY p.id ORDER BY p.numero_compte'
+    
+    cursor.execute(query_charges, params_charges)
+    charges = cursor.fetchall()
+    
+    # Calculer les totaux
+    total_produits = 0
+    for compte in produits:
+        solde = compte['total_credit'] - compte['total_debit']
+        compte['solde'] = solde
+        total_produits += solde
+    
+    total_charges = 0
+    for compte in charges:
+        solde = compte['total_debit'] - compte['total_credit']
+        compte['solde'] = solde
+        total_charges += solde
+    
+    # Calculer le résultat net
+    resultat_net = total_produits - total_charges
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('comptabilite/compte_resultat.html', 
+                          produits=produits,
+                          charges=charges,
+                          total_produits=total_produits,
+                          total_charges=total_charges,
+                          resultat_net=resultat_net,
+                          date_debut=date_debut,
+                          date_fin=date_fin)
 
 
 if __name__ == '__main__':

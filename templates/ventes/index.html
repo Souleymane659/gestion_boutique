@@ -19,9 +19,13 @@
         </div>
     </div>
 
+    <div class="search-container">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchVentesInput" class="search-input" placeholder="Rechercher une vente par client, date ou montant..." onkeyup="filterVentesTable()">
+    </div>
 
     <div class="table-responsive">
-        <table style="font-size: 1.2rem; width: 100%;">
+        <table id="ventesTable" style="font-size: 1.2rem; width: 100%;">
             <thead>
                 <tr style="font-size: 1.3rem; padding: 1.5rem;">
                     <th style="padding: 1rem; width: 80px;">ID</th>
@@ -59,4 +63,27 @@
         </table>
     </div>
 </div>
+
+<script>
+function filterVentesTable() {
+    const input = document.getElementById('searchVentesInput');
+    const filter = input.value.trim().toLowerCase();
+    const table = document.getElementById('ventesTable');
+    const rows = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        if (!cells.length) {
+            continue;
+        }
+
+        const date = (cells[1].textContent || cells[1].innerText).toLowerCase();
+        const client = (cells[2].textContent || cells[2].innerText).toLowerCase();
+        const total = (cells[3].textContent || cells[3].innerText).toLowerCase();
+        const rowText = `${date} ${client} ${total}`;
+
+        rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
+    }
+}
+</script>
 {% endblock %}

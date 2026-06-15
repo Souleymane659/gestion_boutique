@@ -18,11 +18,17 @@
 
             <div class="form-group">
                 <label for="statut">Statut</label>
-                <select name="statut" id="statut">
+                <select name="statut" id="statut" onchange="toggleMontantPaye()">
                     <option value="NON_PAYEE" {% if facture.statut == 'NON_PAYEE' %}selected{% endif %}>Non Payée</option>
                     <option value="PARTIELLE" {% if facture.statut == 'PARTIELLE' %}selected{% endif %}>Partielle</option>
                     <option value="PAYEE" {% if facture.statut == 'PAYEE' %}selected{% endif %}>Payée</option>
                 </select>
+            </div>
+
+            <div class="form-group" id="montantPayeGroup" style="display: {% if facture.statut == 'PARTIELLE' %}block{% else %}none{% endif %};">
+                <label for="montant_paye">Montant Payé (FCFA)</label>
+                <input type="number" name="montant_paye" id="montant_paye" min="0" step="0.01" value="{{ facture.montant_paye if facture.montant_paye else '' }}" placeholder="Entrez le montant payé">
+                <small style="color: var(--text-muted); display: block; margin-top: 0.3rem;">Le montant restant sera calculé automatiquement</small>
             </div>
 
             <div class="form-group">
@@ -89,6 +95,21 @@
 </style>
 
 <script>
+function toggleMontantPaye() {
+    const statut = document.getElementById('statut').value;
+    const montantPayeGroup = document.getElementById('montantPayeGroup');
+    const montantPayeInput = document.getElementById('montant_paye');
+    
+    if (statut === 'PARTIELLE') {
+        montantPayeGroup.style.display = 'block';
+        montantPayeInput.required = true;
+    } else {
+        montantPayeGroup.style.display = 'none';
+        montantPayeInput.required = false;
+        montantPayeInput.value = '';
+    }
+}
+
 function addLigne() {
     const container = document.getElementById('lignesContainer');
     const nouvelleLigne = document.createElement('div');

@@ -1,0 +1,139 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="card">
+        <h2>Ajouter une Écriture Comptable</h2>
+        <form action="{{ url_for('ajouter_ecriture') }}" method="POST" id="ecritureForm">
+            
+            <div class="form-group">
+                <label for="date_ecriture">Date de l'Écriture</label>
+                <input type="date" name="date_ecriture" id="date_ecriture" required>
+            </div>
+
+            <div class="form-group">
+                <label for="libelle">Libellé</label>
+                <input type="text" name="libelle" id="libelle" required placeholder="Description de l'écriture">
+            </div>
+
+            <div class="form-group">
+                <label>Lignes de l'Écriture</label>
+                <div id="lignesContainer">
+                    <div class="ligne-ecriture" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem; align-items: end;">
+                        <div>
+                            <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Compte</label>
+                            <select name="compte_id[]" class="compte-select" required>
+                                <option value="">Sélectionner</option>
+                                {% for compte in comptes %}
+                                <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }} ({{ compte.type_compte }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Débit</label>
+                            <input type="number" name="debit[]" class="debit-input" min="0" step="0.01" placeholder="0.00" onchange="verifierEquilibre()">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Crédit</label>
+                            <input type="number" name="credit[]" class="credit-input" min="0" step="0.01" placeholder="0.00" onchange="verifierEquilibre()">
+                        </div>
+                        <button type="button" class="btn-icon btn-delete" onclick="removeLigne(this)" title="Supprimer la ligne" style="width: 45px; height: 45px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-add" style="margin-top: 1rem; padding: 0.5rem 1rem; font-size: 0.9rem;" onclick="addLigne()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.3rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Ajouter une ligne
+                </button>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1rem; background: var(--input-bg); border-radius: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <strong>Total Débit:</strong> <span id="totalDebit" style="color: var(--success); font-weight: 700;">0.00</span> FCFA
+                    </div>
+                    <div>
+                        <strong>Total Crédit:</strong> <span id="totalCredit" style="color: var(--danger); font-weight: 700;">0.00</span> FCFA
+                    </div>
+                </div>
+                <div id="equilibreMessage" style="margin-top: 0.5rem; font-weight: 700;"></div>
+            </div>
+
+            <button type="submit" class="btn-submit" style="margin-top: 1.5rem;">Enregistrer l'Écriture</button>
+            <a href="{{ url_for('index_ecritures') }}" style="display: block; text-align: center; margin-top: 1rem; color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">Annuler</a>
+        </form>
+    </div>
+</div>
+
+<script>
+function addLigne() {
+    const container = document.getElementById('lignesContainer');
+    const nouvelleLigne = document.createElement('div');
+    nouvelleLigne.className = 'ligne-ecriture';
+    nouvelleLigne.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem; align-items: end;';
+    nouvelleLigne.innerHTML = `
+        <div>
+            <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Compte</label>
+            <select name="compte_id[]" class="compte-select" required onchange="verifierEquilibre()">
+                <option value="">Sélectionner</option>
+                {% for compte in comptes %}
+                <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }} ({{ compte.type_compte }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Débit</label>
+            <input type="number" name="debit[]" class="debit-input" min="0" step="0.01" placeholder="0.00" onchange="verifierEquilibre()">
+        </div>
+        <div>
+            <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Crédit</label>
+            <input type="number" name="credit[]" class="credit-input" min="0" step="0.01" placeholder="0.00" onchange="verifierEquilibre()">
+        </div>
+        <button type="button" class="btn-icon btn-delete" onclick="removeLigne(this)" title="Supprimer la ligne" style="width: 45px; height: 45px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+    `;
+    container.appendChild(nouvelleLigne);
+}
+
+function removeLigne(button) {
+    const lignes = document.querySelectorAll('.ligne-ecriture');
+    if (lignes.length > 1) {
+        button.closest('.ligne-ecriture').remove();
+        verifierEquilibre();
+    }
+}
+
+function verifierEquilibre() {
+    const debits = document.querySelectorAll('.debit-input');
+    const credits = document.querySelectorAll('.credit-input');
+    let totalDebit = 0;
+    let totalCredit = 0;
+    
+    debits.forEach(d => {
+        totalDebit += parseFloat(d.value) || 0;
+    });
+    
+    credits.forEach(c => {
+        totalCredit += parseFloat(c.value) || 0;
+    });
+    
+    document.getElementById('totalDebit').textContent = totalDebit.toFixed(2);
+    document.getElementById('totalCredit').textContent = totalCredit.toFixed(2);
+    
+    const message = document.getElementById('equilibreMessage');
+    if (Math.abs(totalDebit - totalCredit) < 0.01) {
+        message.textContent = '✓ Écriture équilibrée';
+        message.style.color = '#059669';
+    } else {
+        message.textContent = '⚠️ Écriture déséquilibrée : Écart de ' + Math.abs(totalDebit - totalCredit).toFixed(2) + ' FCFA';
+        message.style.color = '#dc2626';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    verifierEquilibre();
+});
+</script>
+{% endblock %}

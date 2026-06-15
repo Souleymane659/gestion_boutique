@@ -9,7 +9,7 @@ conn = mysql.connector.connect(
 )
 cursor = conn.cursor(dictionary=True)
 
-for table in ['produits', 'clients', 'fournisseurs', 'ventes']:
+for table in ['produits', 'clients', 'fournisseurs', 'ventes', 'factures', 'plans_comptables', 'ecritures_comptables', 'lignes_ecritures']:
     cursor.execute(f"DESCRIBE {table}")
     print(f"--- {table} ---")
     for row in cursor.fetchall():

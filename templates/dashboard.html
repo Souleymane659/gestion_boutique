@@ -135,7 +135,19 @@
         <p>Voir et gérer les Rapports de Vente</p>
     </a>
 
-    <!-- Card 11: Utilisateurs -->
+    <!-- Card 11: Comptabilité -->
+    <a href="{{ url_for('index_comptabilite') }}" class="dashboard-card">
+        <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z" />
+            </svg>
+        </div>
+        <h3>Module Comptabilité</h3>
+        <p>Journal, Grand Livre, Balance, Bilan</p>
+    </a>
+
+    <!-- Card 12: Utilisateurs -->
     {% if session.get('username') == 'Admin1' %}
     <a href="{{ url_for('index_utilisateurs') }}" class="dashboard-card">
         <div class="card-icon">
