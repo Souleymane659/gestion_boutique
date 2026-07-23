@@ -4,18 +4,42 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
-            <h2>Journal Comptable</h2>
-            <span class="badge badge-stock">Écritures Chronologiques</span>
+            <h2>Journal Comptable SYSCOHADA</h2>
+            <span class="badge badge-stock">{{ ecritures|length }} Écritures chronologiques</span>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="background: var(--primary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Ajouter une Écriture
-            </a>
             <a href="{{ url_for('index_comptabilite') }}" class="btn-add" style="background: var(--secondary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
+            <button onclick="exporterExcel()" class="btn-add" style="background: #107c41; font-size: 1.2rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exporter Excel
+            </button>
+            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nouvelle Écriture
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques du Journal -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Écritures</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ ecritures|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Débit</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(total_debit) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Crédit</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(total_credit) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Équilibre</div>
+            <div style="font-size: 2rem; font-weight: 700;">{% if total_debit == total_credit %}OK{% else %}KO{% endif %}</div>
         </div>
     </div>
 
@@ -37,7 +61,7 @@
         </div>
     </form>
 
-    <div class="search-container">
+    <div class="search-container" style="margin-bottom: 1.5rem;">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="text" id="searchJournalInput" class="search-input" placeholder="Rechercher une écriture par date, libellé ou compte..." onkeyup="filterJournalTable()">
     </div>
@@ -63,8 +87,8 @@
                     <td style="font-size: 1.1rem; padding: 1rem;">{{ ecriture.libelle }}</td>
                     <td style="font-weight: 600; font-size: 1.1rem; padding: 1rem;">{{ ecriture.numero_compte }}</td>
                     <td style="font-size: 1.1rem; padding: 1rem;">{{ ecriture.intitule }}</td>
-                    <td style="font-weight: 700; color: var(--success); font-size: 1.1rem; padding: 1rem; text-align: right;">{{ '{:,.2f}'.format(ecriture.debit) if ecriture.debit else '0,00' }} FCFA</td>
-                    <td style="font-weight: 700; color: var(--danger); font-size: 1.1rem; padding: 1rem; text-align: right;">{{ '{:,.2f}'.format(ecriture.credit) if ecriture.credit else '0,00' }} FCFA</td>
+                    <td style="font-weight: 700; color: var(--success); font-size: 1.1rem; padding: 1rem; text-align: right;">{{ '{:,.0f}'.format(ecriture.debit) if ecriture.debit else '0' }} FCFA</td>
+                    <td style="font-weight: 700; color: var(--danger); font-size: 1.1rem; padding: 1rem; text-align: right;">{{ '{:,.0f}'.format(ecriture.credit) if ecriture.credit else '0' }} FCFA</td>
                 </tr>
                 {% endfor %}
                 {% if not ecritures %}
@@ -78,13 +102,13 @@
             <tfoot>
                 <tr style="background: var(--input-bg); font-weight: 700;">
                     <td colspan="5" style="padding: 1rem; text-align: right; font-size: 1.2rem;">TOTAUX:</td>
-                    <td style="padding: 1rem; text-align: right; color: var(--success); font-size: 1.2rem;">{{ '{:,.2f}'.format(total_debit) }} FCFA</td>
-                    <td style="padding: 1rem; text-align: right; color: var(--danger); font-size: 1.2rem;">{{ '{:,.2f}'.format(total_credit) }} FCFA</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--success); font-size: 1.2rem;">{{ '{:,.0f}'.format(total_debit) }} FCFA</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--danger); font-size: 1.2rem;">{{ '{:,.0f}'.format(total_credit) }} FCFA</td>
                 </tr>
                 {% if total_debit != total_credit %}
                 <tr style="background: #fee2e2;">
                     <td colspan="7" style="padding: 1rem; text-align: center; color: #dc2626; font-weight: 700; font-size: 1.1rem;">
-                        ⚠️ Déséquilibre comptable : Écart de {{ '{:,.2f}'.format((total_debit - total_credit) if total_debit > total_credit else (total_credit - total_debit)) }} FCFA
+                        ⚠️ Déséquilibre comptable : Écart de {{ '{:,.0f}'.format((total_debit - total_credit) if total_debit > total_credit else (total_credit - total_debit)) }} FCFA
                     </td>
                 </tr>
                 {% else %}
@@ -99,6 +123,8 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function filterJournalTable() {
     const input = document.getElementById('searchJournalInput');
@@ -120,5 +146,32 @@ function filterJournalTable() {
         rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
     }
 }
+
+function telechargerPDF() {
+    const element = document.querySelector('.card');
+    const opt = {
+        margin: [0.5, 0.5, 1.5, 0.5],
+        filename: 'journal_comptable_syscohada.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0,
+            windowHeight: document.querySelector('.card').scrollHeight + 200
+        },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot'] },
+        enableLinks: true
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
+function exporterExcel() {
+    const table = document.getElementById('journalTable');
+    const wb = XLSX.utils.table_to_book(table, {sheet: "Journal Comptable"});
+    XLSX.writeFile(wb, 'journal_comptable_syscohada.xlsx');
+}
+
 </script>
 {% endblock %}

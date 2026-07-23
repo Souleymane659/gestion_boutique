@@ -4,24 +4,48 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
-            <h2>Grand Livre</h2>
-            <span class="badge badge-stock">Regroupement par Compte</span>
+            <h2>Grand Livre SYSCOHADA</h2>
+            <span class="badge badge-stock">{{ grand_livre|length }} Comptes avec mouvements</span>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="background: var(--primary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Ajouter une Écriture
-            </a>
             <a href="{{ url_for('index_comptabilite') }}" class="btn-add" style="background: var(--secondary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
+            <button onclick="exporterExcel()" class="btn-add" style="background: #107c41; font-size: 1.2rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exporter Excel
+            </button>
+            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nouvelle Écriture
+            </a>
         </div>
     </div>
 
-    <!-- Filtres par date -->
+    <!-- Statistiques du Grand Livre -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Comptes avec mouvements</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ grand_livre|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Débit</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(grand_livre|sum(attribute='total_debit')) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Crédit</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(grand_livre|sum(attribute='total_credit')) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Solde Global</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(grand_livre|sum(attribute='solde_final')) }} FCFA</div>
+        </div>
+    </div>
+
+    <!-- Filtres avancés -->
     <form method="GET" style="margin-bottom: 2rem; padding: 1.5rem; background: var(--input-bg); border-radius: 12px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
             <div>
                 <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Date Début</label>
                 <input type="date" name="date_debut" value="{{ date_debut or '' }}" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
@@ -29,6 +53,19 @@
             <div>
                 <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Date Fin</label>
                 <input type="date" name="date_fin" value="{{ date_fin or '' }}" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+            </div>
+            <div>
+                <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Filtrer par classe</label>
+                <select name="classe" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+                    <option value="">Toutes les classes</option>
+                    <option value="1" {% if classe == '1' %}selected{% endif %}>Classe 1 - Ressources</option>
+                    <option value="2" {% if classe == '2' %}selected{% endif %}>Classe 2 - Immobilisations</option>
+                    <option value="3" {% if classe == '3' %}selected{% endif %}>Classe 3 - Stocks</option>
+                    <option value="4" {% if classe == '4' %}selected{% endif %}>Classe 4 - Tiers</option>
+                    <option value="5" {% if classe == '5' %}selected{% endif %}>Classe 5 - Trésorerie</option>
+                    <option value="6" {% if classe == '6' %}selected{% endif %}>Classe 6 - Charges</option>
+                    <option value="7" {% if classe == '7' %}selected{% endif %}>Classe 7 - Produits</option>
+                </select>
             </div>
             <button type="submit" class="btn-add" style="font-size: 1rem; padding: 0.8rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
@@ -44,20 +81,29 @@
 
     {% for compte_data in grand_livre %}
     <div class="grand-livre-section" style="margin-bottom: 2rem; border: 1px solid var(--glass-border); border-radius: 12px; overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; color: white;">
-            <h3 style="margin: 0; font-size: 1.3rem;">Compte {{ compte_data.compte.numero_compte }} - {{ compte_data.compte.intitule }}</h3>
-            <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 1rem;">Type: {{ compte_data.compte.type_compte }}</p>
+        <div style="background: linear-gradient(135deg, {{ get_classe_color(compte_data.compte.numero_compte[0]) }} 0%, {{ get_type_color(compte_data.compte.type_compte) }} 100%); padding: 1.5rem; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.3rem;">Compte {{ compte_data.compte.numero_compte }} - {{ compte_data.compte.intitule }}</h3>
+                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 1rem;">Type: {{ compte_data.compte.type_compte }} | Classe {{ compte_data.compte.numero_compte[0] }}</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Solde Final</div>
+                    <div style="font-size: 1.5rem; font-weight: 700;">{{ '{:,.0f}'.format(compte_data.solde_final) }} FCFA</div>
+                </div>
+            </div>
         </div>
         
         <table class="grand-livre-table" style="font-size: 1.1rem; width: 100%;">
             <thead>
                 <tr style="font-size: 1.1rem; padding: 1rem; background: var(--input-bg);">
                     <th style="padding: 0.8rem; width: 120px;">Date</th>
-                    <th style="padding: 0.8rem; width: 100px;">N° Écriture</th>
+                    <th style="padding: 0.8rem; width: 100px;">N°</th>
                     <th style="padding: 0.8rem; width: 250px;">Libellé</th>
                     <th style="padding: 0.8rem; width: 150px; text-align: right;">Débit</th>
                     <th style="padding: 0.8rem; width: 150px; text-align: right;">Crédit</th>
                     <th style="padding: 0.8rem; width: 150px; text-align: right;">Solde</th>
+                    <th style="padding: 0.8rem; width: 100px; text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,18 +112,26 @@
                     <td style="font-size: 1rem; padding: 0.8rem;">{{ ligne.date_ecriture.strftime('%d/%m/%Y') if ligne.date_ecriture else '' }}</td>
                     <td style="font-weight: 600; font-size: 1rem; padding: 0.8rem;">#{{ ligne.id }}</td>
                     <td style="font-size: 1rem; padding: 0.8rem;">{{ ligne.libelle }}</td>
-                    <td style="font-weight: 600; color: var(--success); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(ligne.debit) if ligne.debit else '0,00' }} FCFA</td>
-                    <td style="font-weight: 600; color: var(--danger); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(ligne.credit) if ligne.credit else '0,00' }} FCFA</td>
-                    <td style="font-weight: 700; color: var(--primary); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(ligne.solde) }} FCFA</td>
+                    <td style="font-weight: 600; color: var(--success); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.0f}'.format(ligne.debit) if ligne.debit else '0' }} FCFA</td>
+                    <td style="font-weight: 600; color: var(--danger); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.0f}'.format(ligne.credit) if ligne.credit else '0' }} FCFA</td>
+                    <td style="font-weight: 700; color: var(--primary); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.0f}'.format(ligne.solde) }} FCFA</td>
+                    <td class="actions" style="padding: 0.8rem; text-align: center;">
+                        <a href="{{ url_for('modifier_ecriture', id=ligne.id) }}" class="btn-icon btn-edit" title="Modifier" style="width: 40px; height: 40px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </a>
+                        <a href="{{ url_for('supprimer_ecriture', id=ligne.id) }}" class="btn-icon btn-delete" title="Supprimer" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette écriture ?')" style="width: 40px; height: 40px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="10"></line><line x1="14" y1="11" x2="14" y2="10"></line></svg>
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr style="background: var(--input-bg); font-weight: 700;">
-                    <td colspan="3" style="padding: 0.8rem; text-align: right; font-size: 1.1rem;">TOTAUX:</td>
-                    <td style="padding: 0.8rem; text-align: right; color: var(--success); font-size: 1.1rem;">{{ '{:,.2f}'.format(compte_data.total_debit) }} FCFA</td>
-                    <td style="padding: 0.8rem; text-align: right; color: var(--danger); font-size: 1.1rem;">{{ '{:,.2f}'.format(compte_data.total_credit) }} FCFA</td>
-                    <td style="padding: 0.8rem; text-align: right; color: var(--primary); font-size: 1.1rem;">{{ '{:,.2f}'.format(compte_data.solde_final) }} FCFA</td>
+                    <td colspan="4" style="padding: 0.8rem; text-align: right; font-size: 1.1rem;">TOTAUX:</td>
+                    <td style="padding: 0.8rem; text-align: right; color: var(--success); font-size: 1.1rem;">{{ '{:,.0f}'.format(compte_data.total_debit) }} FCFA</td>
+                    <td style="padding: 0.8rem; text-align: right; color: var(--danger); font-size: 1.1rem;">{{ '{:,.0f}'.format(compte_data.total_credit) }} FCFA</td>
+                    <td style="padding: 0.8rem; text-align: right; color: var(--primary); font-size: 1.1rem;">{{ '{:,.0f}'.format(compte_data.solde_final) }} FCFA</td>
                 </tr>
             </tfoot>
         </table>
@@ -90,4 +144,74 @@
     </div>
     {% endif %}
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function filterGrandLivreSections() {
+    const input = document.getElementById('searchGrandLivreInput');
+    const filter = input.value.trim().toLowerCase();
+    const sections = document.querySelectorAll('.grand-livre-section');
+
+    sections.forEach(section => {
+        const compteNum = section.querySelector('h3').textContent.toLowerCase();
+        const compteType = section.querySelector('p').textContent.toLowerCase();
+        const table = section.querySelector('table');
+        const rows = table.getElementsByTagName('tr');
+        let hasMatch = compteNum.indexOf(filter) > -1 || compteType.indexOf(filter) > -1;
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            if (!cells.length) continue;
+            const date = (cells[0].textContent || cells[0].innerText).toLowerCase();
+            const num = (cells[1].textContent || cells[1].innerText).toLowerCase();
+            const libelle = (cells[2].textContent || cells[2].innerText).toLowerCase();
+            const rowText = `${date} ${num} ${libelle}`;
+            if (rowText.indexOf(filter) > -1) {
+                hasMatch = true;
+                break;
+            }
+        }
+        section.style.display = hasMatch ? '' : 'none';
+    });
+}
+
+function telechargerPDF() {
+    const element = document.querySelector('.card');
+    const opt = {
+        margin: [0.5, 0.5, 1.5, 0.5],
+        filename: 'grand_livre_syscohada.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0,
+            windowHeight: document.querySelector('.card').scrollHeight + 200
+        },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { 
+            mode: ['css', 'legacy'],
+            avoid: ['tr', '.grand-livre-section', 'tfoot']
+        },
+        enableLinks: true
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
+function exporterExcel() {
+    const wb = XLSX.utils.book_new();
+    const sections = document.querySelectorAll('.grand-livre-section');
+    
+    sections.forEach((section, index) => {
+        const table = section.querySelector('table');
+        const compteNum = section.querySelector('h3').textContent;
+        const sheetName = compteNum.substring(0, 31).replace(/[\/\\\?\*\[\]]/g, '_');
+        const ws = XLSX.utils.table_to_sheet(table);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+    
+    XLSX.writeFile(wb, 'grand_livre_syscohada.xlsx');
+}
+</script>
 {% endblock %}

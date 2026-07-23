@@ -4,18 +4,42 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
-            <h2>Bilan Comptable</h2>
-            <span class="badge badge-stock">Actif et Passif</span>
+            <h2>Bilan Comptable SYSCOHADA</h2>
+            <span class="badge badge-stock">Actif et Passif conformes au SYSCOHADA Révisé</span>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="background: var(--primary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Ajouter une Écriture
-            </a>
             <a href="{{ url_for('index_comptabilite') }}" class="btn-add" style="background: var(--secondary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
+            <button onclick="exporterExcel()" class="btn-add" style="background: #107c41; font-size: 1.2rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exporter Excel
+            </button>
+            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nouvelle Écriture
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques du Bilan -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Actif</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(total_actif) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Passif</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(total_passif) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Comptes Actif</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ actif|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Comptes Passif</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ passif|length }}</div>
         </div>
     </div>
 
@@ -42,7 +66,7 @@
         <input type="text" id="searchBilanInput" class="search-input" placeholder="Rechercher un compte par numéro, intitulé ou solde..." onkeyup="filterBilanTables()">
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+    <div class="bilan-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
         <!-- ACTIF -->
         <div>
             <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px 12px 0 0; color: white; margin-bottom: 0;">
@@ -62,7 +86,7 @@
                         <tr style="padding: 0.8rem;">
                             <td style="font-weight: 600; font-size: 1rem; padding: 0.8rem;">{{ compte.numero_compte }}</td>
                             <td style="font-size: 1rem; padding: 0.8rem;">{{ compte.intitule }}</td>
-                            <td style="font-weight: 700; color: var(--success); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(compte.solde) }} FCFA</td>
+                            <td style="font-weight: 700; color: var(--success); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.0f}'.format(compte.solde) }} FCFA</td>
                         </tr>
                         {% endfor %}
                         {% if not actif %}
@@ -76,7 +100,7 @@
                     <tfoot>
                         <tr style="background: #f0fdf4; font-weight: 700;">
                             <td colspan="2" style="padding: 0.8rem; text-align: right; font-size: 1.2rem;">TOTAL ACTIF:</td>
-                            <td style="padding: 0.8rem; text-align: right; color: var(--success); font-size: 1.3rem;">{{ '{:,.2f}'.format(total_actif) }} FCFA</td>
+                            <td style="padding: 0.8rem; text-align: right; color: var(--success); font-size: 1.3rem;">{{ '{:,.0f}'.format(total_actif) }} FCFA</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -116,7 +140,7 @@
                     <tfoot>
                         <tr style="background: #fff1f2; font-weight: 700;">
                             <td colspan="2" style="padding: 0.8rem; text-align: right; font-size: 1.2rem;">TOTAL PASSIF:</td>
-                            <td style="padding: 0.8rem; text-align: right; color: var(--danger); font-size: 1.3rem;">{{ '{:,.2f}'.format(total_passif) }} FCFA</td>
+                            <td style="padding: 0.8rem; text-align: right; color: var(--danger); font-size: 1.3rem;">{{ '{:,.0f}'.format(total_passif) }} FCFA</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -142,14 +166,15 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function filterBilanTables() {
     const input = document.getElementById('searchBilanInput');
     const filter = input.value.trim().toLowerCase();
-    const tables = [document.getElementById('actifTable'), document.getElementById('passifTable')];
+    const tables = document.querySelectorAll('table');
 
     tables.forEach(table => {
-        if (!table) return;
         const rows = table.getElementsByTagName('tr');
         for (let i = 1; i < rows.length; i++) {
             const cells = rows[i].getElementsByTagName('td');
@@ -162,5 +187,39 @@ function filterBilanTables() {
         }
     });
 }
+
+function telechargerPDF() {
+    const element = document.querySelector('.card');
+    const opt = {
+        margin: [0.3, 0.3, 0.5, 0.3],
+        filename: 'bilan_comptable_syscohada.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 3, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0,
+            windowHeight: document.querySelector('.card').scrollHeight + 500
+        },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot', '.table-section'] },
+        enableLinks: true
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
+function exporterExcel() {
+    const tables = document.querySelectorAll('table');
+    const wb = XLSX.utils.book_new();
+    
+    tables.forEach((table, index) => {
+        const ws = XLSX.utils.table_to_sheet(table);
+        const sheetName = index === 0 ? 'Actif' : 'Passif';
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+    
+    XLSX.writeFile(wb, 'bilan_comptable_syscohada.xlsx');
+}
+
 </script>
 {% endblock %}

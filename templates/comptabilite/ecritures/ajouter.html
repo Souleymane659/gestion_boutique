@@ -23,9 +23,24 @@
                         <div>
                             <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Compte</label>
                             <select name="compte_id[]" class="compte-select" required>
-                                <option value="">Sélectionner</option>
-                                {% for compte in comptes %}
-                                <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }} ({{ compte.type_compte }})</option>
+                                <option value="">Sélectionner un compte</option>
+                                {% set classes = {
+                                    '1': 'Classe 1 - Ressources stables',
+                                    '2': 'Classe 2 - Immobilisations',
+                                    '3': 'Classe 3 - Stocks',
+                                    '4': 'Classe 4 - Tiers',
+                                    '5': 'Classe 5 - Trésorerie',
+                                    '6': 'Classe 6 - Charges',
+                                    '7': 'Classe 7 - Produits'
+                                } %}
+                                {% for classe_num, classe_nom in classes.items() %}
+                                <optgroup label="{{ classe_nom }}">
+                                    {% for compte in comptes %}
+                                        {% if compte.numero_compte and compte.numero_compte[0] == classe_num %}
+                                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </optgroup>
                                 {% endfor %}
                             </select>
                         </div>
@@ -76,10 +91,56 @@ function addLigne() {
         <div>
             <label style="font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">Compte</label>
             <select name="compte_id[]" class="compte-select" required onchange="verifierEquilibre()">
-                <option value="">Sélectionner</option>
-                {% for compte in comptes %}
-                <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }} ({{ compte.type_compte }})</option>
-                {% endfor %}
+                <option value="">Sélectionner un compte</option>
+                <optgroup label="Classe 1 - Ressources stables">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '1' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Classe 2 - Immobilisations">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '2' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Classe 3 - Stocks">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '3' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Classe 4 - Tiers">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '4' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Classe 5 - Trésorerie">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '5' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Classe 6 - Charges">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '6' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="Classe 7 - Produits">
+                    {% for compte in comptes %}
+                        {% if compte.numero_compte and compte.numero_compte[0] == '7' %}
+                        <option value="{{ compte.id }}">{{ compte.numero_compte }} - {{ compte.intitule }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </optgroup>
             </select>
         </div>
         <div>

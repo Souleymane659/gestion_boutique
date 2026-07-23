@@ -4,18 +4,42 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
-            <h2>Compte de Résultat</h2>
-            <span class="badge badge-stock">Produits et Charges</span>
+            <h2>Compte de Résultat SYSCOHADA</h2>
+            <span class="badge badge-stock">Produits et Charges conformes au SYSCOHADA Révisé</span>
         </div>
         <div style="display: flex; gap: 1rem;">
-            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="background: var(--primary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Ajouter une Écriture
-            </a>
             <a href="{{ url_for('index_comptabilite') }}" class="btn-add" style="background: var(--secondary); font-size: 1.1rem; padding: 0.75rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
+            <button onclick="exporterExcel()" class="btn-add" style="background: #107c41; font-size: 1.2rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exporter Excel
+            </button>
+            <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nouvelle Écriture
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques du Compte de Résultat -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Chiffre d'affaires</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(chiffre_affaires or 0) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Charges</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(total_charges_variables + total_charges_fixes + total_charges_financieres) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Marge brute</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(marge_brute or 0) }} FCFA</div>
+        </div>
+        <div style="background: linear-gradient(135deg, {% if resultat_net >= 0 %}#43e97b 0%, #38f9d7 100%{% else %}#ff0844 0%, #ffb199 100%{% endif %}); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Résultat Net</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ '{:,.0f}'.format(resultat_net) }} FCFA</div>
         </div>
     </div>
 
@@ -39,132 +63,183 @@
 
     <div class="search-container" style="margin-bottom: 1.5rem;">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="searchCompteResultatInput" class="search-input" placeholder="Rechercher dans le Compte de Résultat par numéro, intitulé ou solde..." onkeyup="filterCompteResultatTables()">
+        <input type="text" id="searchCompteResultatInput" class="search-input" placeholder="Rechercher dans le Compte de Résultat..." onkeyup="filterCompteResultatTables()">
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-        <!-- PRODUITS -->
-        <div>
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px 12px 0 0; color: white; margin-bottom: 0;">
-                <h3 style="margin: 0; font-size: 1.4rem;">PRODUITS</h3>
-            </div>
-            <div style="border: 2px solid #667eea; border-top: none; border-radius: 0 0 12px 12px; padding: 0;">
-                <table style="font-size: 1.1rem; width: 100%;">
-                    <thead>
-                        <tr style="font-size: 1.1rem; padding: 1rem; background: #f5f3ff;">
-                            <th style="padding: 0.8rem; width: 120px;">N° Compte</th>
-                            <th style="padding: 0.8rem; width: 200px;">Intitulé</th>
-                            <th style="padding: 0.8rem; width: 150px; text-align: right;">Solde</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for compte in produits %}
-                        <tr style="padding: 0.8rem;">
-                            <td style="font-weight: 600; font-size: 1rem; padding: 0.8rem;">{{ compte.numero_compte }}</td>
-                            <td style="font-size: 1rem; padding: 0.8rem;">{{ compte.intitule }}</td>
-                            <td style="font-weight: 700; color: var(--success); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(compte.solde) }} FCFA</td>
-                        </tr>
-                        {% endfor %}
-                        {% if not produits %}
-                        <tr>
-                            <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 1rem;">
-                                Aucun compte de produits.
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                    <tfoot>
-                        <tr style="background: #f5f3ff; font-weight: 700;">
-                            <td colspan="2" style="padding: 0.8rem; text-align: right; font-size: 1.2rem;">TOTAL PRODUITS:</td>
-                            <td style="padding: 0.8rem; text-align: right; color: var(--success); font-size: 1.3rem;">{{ '{:,.2f}'.format(total_produits) }} FCFA</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+    <div style="background: white; border-radius: 12px; border: 2px solid var(--glass-border); overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; color: white;">
+            <h3 style="margin: 0; font-size: 1.6rem; text-align: center;">COMPTE DE RÉSULTAT SYSCOHADA</h3>
+            <p style="margin: 0.5rem 0 0 0; text-align: center; font-size: 1rem; opacity: 0.9;">Montant (FCFA)</p>
         </div>
-
-        <!-- CHARGES -->
-        <div>
-            <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px 12px 0 0; color: white; margin-bottom: 0;">
-                <h3 style="margin: 0; font-size: 1.4rem;">CHARGES</h3>
-            </div>
-            <div style="border: 2px solid #fa709a; border-top: none; border-radius: 0 0 12px 12px; padding: 0;">
-                <table style="font-size: 1.1rem; width: 100%;">
-                    <thead>
-                        <tr style="font-size: 1.1rem; padding: 1rem; background: #fff1f2;">
-                            <th style="padding: 0.8rem; width: 120px;">N° Compte</th>
-                            <th style="padding: 0.8rem; width: 200px;">Intitulé</th>
-                            <th style="padding: 0.8rem; width: 150px; text-align: right;">Solde</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for compte in charges %}
-                        <tr style="padding: 0.8rem;">
-                            <td style="font-weight: 600; font-size: 1rem; padding: 0.8rem;">{{ compte.numero_compte }}</td>
-                            <td style="font-size: 1rem; padding: 0.8rem;">{{ compte.intitule }}</td>
-                            <td style="font-weight: 700; color: var(--danger); font-size: 1rem; padding: 0.8rem; text-align: right;">{{ '{:,.2f}'.format(compte.solde) }} FCFA</td>
-                        </tr>
-                        {% endfor %}
-                        {% if not charges %}
-                        <tr>
-                            <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem; font-size: 1rem;">
-                                Aucun compte de charges.
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                    <tfoot>
-                        <tr style="background: #fff1f2; font-weight: 700;">
-                            <td colspan="2" style="padding: 0.8rem; text-align: right; font-size: 1.2rem;">TOTAL CHARGES:</td>
-                            <td style="padding: 0.8rem; text-align: right; color: var(--danger); font-size: 1.3rem;">{{ '{:,.2f}'.format(total_charges) }} FCFA</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- RÉSULTAT NET -->
-    <div style="margin-top: 2rem; padding: 2rem; border-radius: 12px; {% if resultat_net >= 0 %}background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #059669;{% else %}background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 2px solid #dc2626;{% endif %}">
-        <div style="text-align: center;">
-            <h3 style="margin: 0; font-size: 1.5rem; {% if resultat_net >= 0 %}color: #059669;{% else %}color: #dc2626;{% endif %}">
-                {% if resultat_net >= 0 %}
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                BÉNÉFICE NET
-                {% else %}
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                PERTE NETTE
-                {% endif %}
-            </h3>
-            <p style="margin: 1rem 0 0 0; font-size: 2rem; font-weight: 700; {% if resultat_net >= 0 %}color: #059669;{% else %}color: #dc2626;{% endif %}">
-                {{ '{:,.2f}'.format(resultat_net) }} FCFA
-            </p>
-            <p style="margin: 0.5rem 0 0 0; font-size: 1.1rem; {% if resultat_net >= 0 %}color: #059669;{% else %}color: #dc2626;{% endif %}">
-                Produits ({{ '{:,.2f}'.format(total_produits) }} FCFA) - Charges ({{ '{:,.2f}'.format(total_charges) }} FCFA)
-            </p>
-        </div>
+        
+        <table style="font-size: 1.1rem; width: 100%;">
+            <thead>
+                <tr style="font-size: 1.1rem; padding: 1rem; background: #f5f3ff;">
+                    <th style="padding: 1rem; width: 50px;">N°</th>
+                    <th style="padding: 1rem; text-align: left;">Libellé</th>
+                    <th style="padding: 1rem; width: 200px; text-align: right;">Montant</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Chiffre d'affaires -->
+                <tr style="background: #e8f5e9; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Chiffre d'affaires (Ventes)</td>
+                    <td style="padding: 1rem; text-align: right;"></td>
+                </tr>
+                {% for compte in chiffre_affaires_comptes %}
+                <tr style="padding: 0.8rem;">
+                    <td style="padding: 0.8rem 1rem; font-weight: 600;">{{ compte.numero_compte }}</td>
+                    <td style="padding: 0.8rem 1rem;">{{ compte.intitule }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: right; color: var(--success);">{{ '{:,.0f}'.format(compte.solde) }} FCFA</td>
+                </tr>
+                {% endfor %}
+                <tr style="background: #e8f5e9; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Montant chiffre d'affaires</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--success);">{{ '{:,.0f}'.format(chiffre_affaires or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Charges variables -->
+                <tr style="background: #fff3e0; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Charges variables</td>
+                    <td style="padding: 1rem; text-align: right;"></td>
+                </tr>
+                {% for charge in charges_variables %}
+                <tr style="padding: 0.8rem;">
+                    <td style="padding: 0.8rem 1rem; font-weight: 600;">{{ charge.numero_compte }}</td>
+                    <td style="padding: 0.8rem 1rem;">{{ charge.intitule }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(charge.solde) }} FCFA</td>
+                </tr>
+                {% endfor %}
+                <tr style="background: #fff3e0; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Total des charges variables</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(total_charges_variables or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Marge brute -->
+                <tr style="background: #e3f2fd; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Marge brute</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--success);">{{ '{:,.0f}'.format(marge_brute or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Charges fixes -->
+                <tr style="background: #fce4ec; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Charges fixes</td>
+                    <td style="padding: 1rem; text-align: right;"></td>
+                </tr>
+                {% for charge in charges_fixes %}
+                <tr style="padding: 0.8rem;">
+                    <td style="padding: 0.8rem 1rem; font-weight: 600;">{{ charge.numero_compte }}</td>
+                    <td style="padding: 0.8rem 1rem;">{{ charge.intitule }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(charge.solde) }} FCFA</td>
+                </tr>
+                {% endfor %}
+                <tr style="background: #fce4ec; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Total des charges fixes</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(total_charges_fixes or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Résultat d'exploitation -->
+                <tr style="background: #e8f5e9; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Résultat d'exploitation</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--success);">{{ '{:,.0f}'.format(resultat_exploitation or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Charges financières -->
+                {% for charge in charges_financieres %}
+                <tr style="padding: 0.8rem;">
+                    <td style="padding: 0.8rem 1rem; font-weight: 600;">{{ charge.numero_compte }}</td>
+                    <td style="padding: 0.8rem 1rem;">{{ charge.intitule }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(charge.solde) }} FCFA</td>
+                </tr>
+                {% endfor %}
+                <tr style="background: #fff3e0; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Total charges financières</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(total_charges_financieres or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Résultat avant impôt -->
+                <tr style="background: #e3f2fd; font-weight: 700;">
+                    <td style="padding: 1rem; font-weight: 600;">-</td>
+                    <td style="padding: 1rem;">Résultat avant impôt</td>
+                    <td style="padding: 1rem; text-align: right; color: var(--success);">{{ '{:,.0f}'.format(resultat_avant_impot or 0) }} FCFA</td>
+                </tr>
+                
+                <!-- Impôt sur les bénéfices -->
+                {% for impot in impots %}
+                <tr style="padding: 0.8rem;">
+                    <td style="padding: 0.8rem 1rem; font-weight: 600;">{{ impot.numero_compte }}</td>
+                    <td style="padding: 0.8rem 1rem;">{{ impot.intitule }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: right; color: var(--danger);">{{ '{:,.0f}'.format(impot.solde) }} FCFA</td>
+                </tr>
+                {% endfor %}
+                
+                <!-- RÉSULTAT NET -->
+                <tr style="background: {% if resultat_net >= 0 %}linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);{% else %}linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);{% endif %} font-weight: 700; font-size: 1.2rem;">
+                    <td style="padding: 1.2rem; font-weight: 600;">-</td>
+                    <td style="padding: 1.2rem; {% if resultat_net >= 0 %}color: #059669;{% else %}color: #dc2626;{% endif %}">RÉSULTAT NET</td>
+                    <td style="padding: 1.2rem; text-align: right; {% if resultat_net >= 0 %}color: #059669;{% else %}color: #dc2626;{% endif %}">{{ '{:,.0f}'.format(resultat_net) }} FCFA</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function filterCompteResultatTables() {
     const input = document.getElementById('searchCompteResultatInput');
     const filter = input.value.trim().toLowerCase();
-    const tables = [document.getElementById('produitsTable'), document.getElementById('chargesTable')];
+    const table = document.querySelector('table');
+    const rows = table.getElementsByTagName('tr');
 
-    tables.forEach(table => {
-        if (!table) return;
-        const rows = table.getElementsByTagName('tr');
-        for (let i = 1; i < rows.length; i++) {
-            const cells = rows[i].getElementsByTagName('td');
-            if (!cells.length) continue;
-            const numero = (cells[0].textContent || cells[0].innerText).toLowerCase();
-            const intitule = (cells[1].textContent || cells[1].innerText).toLowerCase();
-            const solde = (cells[2].textContent || cells[2].innerText).toLowerCase();
-            const rowText = `${numero} ${intitule} ${solde}`;
-            rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
-        }
-    });
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        if (!cells.length) continue;
+        
+        const numero = (cells[0].textContent || cells[0].innerText).toLowerCase();
+        const libelle = (cells[1].textContent || cells[1].innerText).toLowerCase();
+        const montant = (cells[2].textContent || cells[2].innerText).toLowerCase();
+        const rowText = `${numero} ${libelle} ${montant}`;
+
+        rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
+    }
 }
+
+function telechargerPDF() {
+    const element = document.querySelector('.card');
+    const opt = {
+        margin: [0.5, 0.5, 1.5, 0.5],
+        filename: 'compte_resultat_syscohada.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0,
+            windowHeight: document.querySelector('.card').scrollHeight + 200
+        },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot'] },
+        enableLinks: true
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
+function exporterExcel() {
+    const table = document.querySelector('table');
+    const wb = XLSX.utils.table_to_book(table, {sheet: "Compte de Résultat"});
+    XLSX.writeFile(wb, 'compte_resultat_syscohada.xlsx');
+}
+
 </script>
 {% endblock %}

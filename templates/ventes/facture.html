@@ -34,11 +34,33 @@
         
         .invoice-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
             margin-bottom: 2rem;
             padding-bottom: 1.5rem;
             border-bottom: 3px solid var(--primary);
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .logo-container img {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: contain;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
         }
         
         .invoice-header h1 {
@@ -279,15 +301,30 @@
 <body>
 <div class="invoice-container">
     <div class="invoice-header">
-        <div>
-            <h1>FACTURE</h1>
-            <p>#INV-{{ "%05d"|format(vente.id_vente) }}</p>
+        {% if parametres and (parametres.logo1 or parametres.logo2 or parametres.logo3 or parametres.logo) %}
+        <div class="logo-container">
+            {% if parametres.logo1 or parametres.logo %}
+            <img src="{{ parametres.logo1 or parametres.logo }}" alt="Logo 1 {{ parametres.nom_boutique }}">
+            {% endif %}
+            {% if parametres.logo2 %}
+            <img src="{{ parametres.logo2 }}" alt="Logo 2 {{ parametres.nom_boutique }}">
+            {% endif %}
+            {% if parametres.logo3 %}
+            <img src="{{ parametres.logo3 }}" alt="Logo 3 {{ parametres.nom_boutique }}">
+            {% endif %}
         </div>
-        <div class="company-info">
-            <h2>{{ parametres.nom_boutique if parametres and parametres.nom_boutique else 'GESTION' }}</h2>
-            <p>{{ parametres.adresse if parametres and parametres.adresse else 'Bamako, Mali' }}<br>
-            Tél: {{ parametres.telephone if parametres and parametres.telephone else '+223 79 37 84 71' }}<br>
-            Email: {{ parametres.email if parametres and parametres.email else 'souleymaneongoiba659@gmail.com' }}</p>
+        {% endif %}
+        <div class="header-content">
+            <div>
+                <h1>FACTURE</h1>
+                <p>#INV-{{ "%05d"|format(vente.id_vente) }}</p>
+            </div>
+            <div class="company-info">
+                <h2>{{ parametres.nom_boutique if parametres and parametres.nom_boutique else 'GESTION' }}</h2>
+                <p>{{ parametres.adresse if parametres and parametres.adresse else 'Bamako, Mali' }}<br>
+                Tél: {{ parametres.telephone if parametres and parametres.telephone else '+223 79 37 84 71' }}<br>
+                Email: {{ parametres.email if parametres and parametres.email else 'souleymaneongoiba659@gmail.com' }}</p>
+            </div>
         </div>
     </div>
 

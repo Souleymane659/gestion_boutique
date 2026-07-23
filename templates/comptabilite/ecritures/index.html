@@ -12,6 +12,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
+            <button onclick="exporterExcel()" class="btn-add" style="background: #107c41; font-size: 1.2rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exporter Excel
+            </button>
             <a href="{{ url_for('ajouter_ecriture') }}" class="btn-add" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nouvelle Écriture
@@ -19,31 +23,75 @@
         </div>
     </div>
 
-    <div class="search-container">
-        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="searchEcrituresInput" class="search-input" placeholder="Rechercher une écriture par date, numéro ou libellé..." onkeyup="filterEcrituresTable()">
+    <!-- Statistiques -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Écritures</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ ecritures|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Lignes</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ ecritures|sum(attribute='nb_lignes') }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Débit</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ "{:,.0f}".format(ecritures|sum(attribute='total_debit')) }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Total Crédit</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ "{:,.0f}".format(ecritures|sum(attribute='total_credit')) }}</div>
+        </div>
+    </div>
+
+    <!-- Filtres avancés -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--input-bg); border-radius: 12px;">
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Rechercher</label>
+            <div class="search-container" style="margin-bottom: 0;">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="searchEcrituresInput" class="search-input" placeholder="Date, numéro ou libellé..." onkeyup="filterEcrituresTable()">
+            </div>
+        </div>
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Date Début</label>
+            <input type="date" id="dateDebut" onchange="filterEcrituresTable()" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+        </div>
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Date Fin</label>
+            <input type="date" id="dateFin" onchange="filterEcrituresTable()" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+        </div>
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">&nbsp;</label>
+            <button onclick="resetFilters()" class="btn-add" style="background: var(--secondary); font-size: 1rem; padding: 0.8rem 1.5rem; cursor: pointer; border: none;">
+                Réinitialiser
+            </button>
+        </div>
     </div>
 
     <div class="table-responsive">
         <table id="ecrituresTable" style="font-size: 1.2rem; width: 100%;">
             <thead>
                 <tr style="font-size: 1.3rem; padding: 1.5rem;">
-                    <th style="padding: 1rem; width: 150px;">Date</th>
-                    <th style="padding: 1rem; width: 100px;">N° Écriture</th>
+                    <th style="padding: 1rem; width: 120px;">Date</th>
+                    <th style="padding: 1rem; width: 100px;">N°</th>
                     <th style="padding: 1rem; width: 300px;">Libellé</th>
                     <th style="padding: 1rem; width: 120px;">Lignes</th>
+                    <th style="padding: 1rem; width: 150px;">Total Débit</th>
+                    <th style="padding: 1rem; width: 150px;">Total Crédit</th>
                     <th style="padding: 1rem; width: 140px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ecriture in ecritures %}
-                <tr style="padding: 1.5rem;">
+                <tr style="padding: 1.5rem;" data-date="{{ ecriture.date_ecriture.strftime('%Y-%m-%d') if ecriture.date_ecriture else '' }}">
                     <td style="font-size: 1.2rem; padding: 1rem;">{{ ecriture.date_ecriture.strftime('%d/%m/%Y') if ecriture.date_ecriture else '' }}</td>
                     <td style="font-weight: 600; font-size: 1.2rem; padding: 1rem;">#{{ ecriture.id }}</td>
                     <td style="font-size: 1.2rem; padding: 1rem;">{{ ecriture.libelle }}</td>
                     <td style="font-size: 1.2rem; padding: 1rem;">
-                        <span class="badge" style="background: var(--primary); color: white; font-size: 1rem;">{{ ecriture.nb_lignes }} ligne(s)</span>
+                        <span class="badge" style="background: var(--primary); color: white; font-size: 1rem;">{{ ecriture.nb_lignes }}</span>
                     </td>
+                    <td style="font-size: 1.2rem; padding: 1rem; font-weight: 600;">{{ "{:,.0f}".format(ecriture.total_debit) }}</td>
+                    <td style="font-size: 1.2rem; padding: 1rem; font-weight: 600;">{{ "{:,.0f}".format(ecriture.total_credit) }}</td>
                     <td class="actions" style="padding: 1rem;">
                         <a href="{{ url_for('modifier_ecriture', id=ecriture.id) }}" class="btn-icon btn-edit" title="Modifier" style="width: 45px; height: 45px;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -56,7 +104,7 @@
                 {% endfor %}
                 {% if not ecritures %}
                 <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.3rem;">
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.3rem;">
                         Aucune écriture enregistrée.
                     </td>
                 </tr>
@@ -66,12 +114,19 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function filterEcrituresTable() {
-    const input = document.getElementById('searchEcrituresInput');
-    const filter = input.value.trim().toLowerCase();
+    const searchInput = document.getElementById('searchEcrituresInput');
+    const dateDebut = document.getElementById('dateDebut');
+    const dateFin = document.getElementById('dateFin');
     const table = document.getElementById('ecrituresTable');
     const rows = table.getElementsByTagName('tr');
+
+    const searchFilter = searchInput.value.trim().toLowerCase();
+    const debutValue = dateDebut.value;
+    const finValue = dateFin.value;
 
     for (let i = 1; i < rows.length; i++) {
         const cells = rows[i].getElementsByTagName('td');
@@ -82,9 +137,53 @@ function filterEcrituresTable() {
         const libelle = (cells[2].textContent || cells[2].innerText).toLowerCase();
         const lignes = (cells[3].textContent || cells[3].innerText).toLowerCase();
         const rowText = `${date} ${num} ${libelle} ${lignes}`;
+        const rowDate = rows[i].getAttribute('data-date');
 
-        rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
+        const matchesSearch = rowText.indexOf(searchFilter) > -1;
+        let matchesDate = true;
+        
+        if (debutValue && rowDate) {
+            matchesDate = matchesDate && rowDate >= debutValue;
+        }
+        if (finValue && rowDate) {
+            matchesDate = matchesDate && rowDate <= finValue;
+        }
+
+        rows[i].style.display = (matchesSearch && matchesDate) ? '' : 'none';
     }
+}
+
+function resetFilters() {
+    document.getElementById('searchEcrituresInput').value = '';
+    document.getElementById('dateDebut').value = '';
+    document.getElementById('dateFin').value = '';
+    filterEcrituresTable();
+}
+
+function telechargerPDF() {
+    const element = document.querySelector('.card');
+    const opt = {
+        margin: [0.5, 0.5, 1.5, 0.5],
+        filename: 'ecritures_comptables.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0,
+            windowHeight: document.querySelector('.card').scrollHeight + 200
+        },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot'] },
+        enableLinks: true
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
+function exporterExcel() {
+    const table = document.getElementById('ecrituresTable');
+    const wb = XLSX.utils.table_to_book(table, {sheet: "Écritures Comptables"});
+    XLSX.writeFile(wb, 'ecritures_comptables.xlsx');
 }
 </script>
 {% endblock %}

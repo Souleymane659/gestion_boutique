@@ -1,27 +1,46 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 import mysql.connector
 from config import Config
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from werkzeug.utils import secure_filename
+import secrets
+from datetime import timedelta
+from security import rate_limit, validate_file_upload, generate_csrf_token, validate_csrf_token, csrf_protect
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Secret
-
-
-
-app.secret_key = "iug2026"
+# Configuration de session sécurisée
+app.config['SESSION_COOKIE_SECURE'] = False  # True en production avec HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
 # Configuration pour l'upload de fichiers
 UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Middleware pour les en-têtes de sécurité
+@app.after_request
+def add_security_headers(response):
+    # Protection XSS
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    # Empêcher le sniffing de type MIME
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Protection contre le clickjacking
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    # Politique de sécurité de contenu (CSP)
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'"
+    # HSTS (HTTP Strict Transport Security) - à activer en HTTPS
+    # response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
 
 # --- AUTHENTICATION ---
 
@@ -55,15 +74,52 @@ def get_parametres():
 
 @app.context_processor
 def inject_parametres():
+    def get_classe_color(classe):
+        colors = {
+            '1': '#667eea',
+            '2': '#f093fb',
+            '3': '#4facfe',
+            '4': '#43e97b',
+            '5': '#fa709a',
+            '6': '#ff0844',
+            '7': '#11998e'
+        }
+        return colors.get(classe, '#667eea')
+    
+    def get_type_color(type_compte):
+        colors = {
+            'ACTIF': '#28a745',
+            'PASSIF': '#17a2b8',
+            'CHARGE': '#dc3545',
+            'PRODUIT': '#ffc107'
+        }
+        return colors.get(type_compte, '#667eea')
+    
     if 'logged_in' in session:
-        return dict(get_parametres=get_parametres)
-    return dict(get_parametres=lambda: None)
+        return dict(
+            get_parametres=get_parametres,
+            get_classe_color=get_classe_color,
+            get_type_color=get_type_color,
+            csrf_token=generate_csrf_token()
+        )
+    return dict(
+        get_parametres=lambda: None,
+        get_classe_color=get_classe_color,
+        get_type_color=get_type_color,
+        csrf_token=generate_csrf_token()
+    )
 
 @app.route('/login', methods=['GET', 'POST'])
+@rate_limit(max_attempts=5, window_minutes=15)
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        
+        # Validation basique des entrées
+        if not username or not password:
+            flash('Veuillez remplir tous les champs.', 'danger')
+            return render_template('login.html')
         
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -79,6 +135,7 @@ def login():
             session['role'] = user['role']
             session['nom'] = user['nom']
             session['user_id'] = user['id']
+            session.permanent = True
             
             flash(f"Bienvenue {user['nom']} !", 'success')
             return redirect(url_for('dashboard'))
@@ -1360,41 +1417,55 @@ def parametres():
         devise = request.form.get('devise', 'FCFA')
         slogan = request.form.get('slogan')
         
-        # Gestion de l'upload du logo
-        logo = None
-        if 'logo' in request.files:
-            file = request.files['logo']
-            if file and file.filename != '' and allowed_file(file.filename):
-                # Créer le dossier d'upload s'il n'existe pas
-                if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                    os.makedirs(app.config['UPLOAD_FOLDER'])
-                
-                filename = secure_filename(file.filename)
-                # Ajouter un timestamp pour éviter les doublons
-                import time
-                timestamp = str(int(time.time()))
-                filename = f"{timestamp}_{filename}"
-                
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                logo = f"/static/uploads/{filename}"
+        # Gestion de l'upload des 3 logos
+        logo1 = None
+        logo2 = None
+        logo3 = None
+        
+        for i in range(1, 4):
+            logo_key = f'logo{i}'
+            if logo_key in request.files:
+                file = request.files[logo_key]
+                if file and file.filename != '' and allowed_file(file.filename):
+                    # Créer le dossier d'upload s'il n'existe pas
+                    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                        os.makedirs(app.config['UPLOAD_FOLDER'])
+                    
+                    filename = secure_filename(file.filename)
+                    # Ajouter un timestamp pour éviter les doublons
+                    import time
+                    timestamp = str(int(time.time()))
+                    filename = f"{timestamp}_{i}_{filename}"
+                    
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    logo_path = f"/static/uploads/{filename}"
+                    
+                    if i == 1:
+                        logo1 = logo_path
+                    elif i == 2:
+                        logo2 = logo_path
+                    elif i == 3:
+                        logo3 = logo_path
         
         try:
             cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (user_id,))
             parametres = cursor.fetchone()
             
             if parametres:
-                # Si un nouveau logo est uploadé, l'utiliser, sinon garder l'ancien
-                logo_to_save = logo if logo else parametres.get('logo')
+                # Si de nouveaux logos sont uploadés, les utiliser, sinon garder les anciens
+                logo1_to_save = logo1 if logo1 else parametres.get('logo1') or parametres.get('logo')
+                logo2_to_save = logo2 if logo2 else parametres.get('logo2')
+                logo3_to_save = logo3 if logo3 else parametres.get('logo3')
                 cursor.execute('''
                     UPDATE parametres 
-                    SET nom_boutique = %s, logo = %s, telephone = %s, email = %s, adresse = %s, devise = %s, slogan = %s
+                    SET nom_boutique = %s, logo1 = %s, logo2 = %s, logo3 = %s, telephone = %s, email = %s, adresse = %s, devise = %s, slogan = %s
                     WHERE user_id = %s
-                ''', (nom_boutique, logo_to_save, telephone, email, adresse, devise, slogan, user_id))
+                ''', (nom_boutique, logo1_to_save, logo2_to_save, logo3_to_save, telephone, email, adresse, devise, slogan, user_id))
             else:
                 cursor.execute('''
-                    INSERT INTO parametres (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id))
+                    INSERT INTO parametres (nom_boutique, logo1, logo2, logo3, telephone, email, adresse, devise, slogan, user_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (nom_boutique, logo1, logo2, logo3, telephone, email, adresse, devise, slogan, user_id))
             
             conn.commit()
             flash('Paramètres mis à jour avec succès !', 'success')
@@ -2373,16 +2444,50 @@ def index_comptabilite():
 @login_required
 def index_plan_comptable():
     """Index du Plan Comptable"""
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
-    comptes = cursor.fetchall()
-    
-    cursor.close()
-    conn.close()
-    
-    return render_template('comptabilite/plan_comptable/index.html', comptes=comptes)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+        comptes = cursor.fetchall()
+        
+        # S'assurer que numero_compte est une chaîne
+        for compte in comptes:
+            if compte['numero_compte']:
+                compte['numero_compte'] = str(compte['numero_compte'])
+        
+        # Filtrer par classe pour les statistiques
+        classe1 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '1']
+        classe2 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '2']
+        classe3 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '3']
+        classe4 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '4']
+        classe5 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '5']
+        classe6 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '6']
+        classe7 = [c for c in comptes if c['numero_compte'] and c['numero_compte'][0] == '7']
+        
+        cursor.close()
+        conn.close()
+        
+        return render_template('comptabilite/plan_comptable/index.html', 
+                              comptes=comptes,
+                              classe1=classe1,
+                              classe2=classe2,
+                              classe3=classe3,
+                              classe4=classe4,
+                              classe5=classe5,
+                              classe6=classe6,
+                              classe7=classe7)
+    except Exception as e:
+        flash(f"Erreur lors du chargement du plan comptable : {str(e)}", 'danger')
+        return render_template('comptabilite/plan_comptable/index.html', 
+                              comptes=[],
+                              classe1=[],
+                              classe2=[],
+                              classe3=[],
+                              classe4=[],
+                              classe5=[],
+                              classe6=[],
+                              classe7=[])
 
 
 @app.route('/comptabilite/plan_comptable/ajouter', methods=['GET', 'POST'])
@@ -2497,7 +2602,9 @@ def index_ecritures():
     
     cursor.execute('''
         SELECT e.*, 
-               (SELECT COUNT(*) FROM lignes_ecritures WHERE ecriture_id = e.id) as nb_lignes
+               (SELECT COUNT(*) FROM lignes_ecritures WHERE ecriture_id = e.id) as nb_lignes,
+               (SELECT COALESCE(SUM(debit), 0) FROM lignes_ecritures WHERE ecriture_id = e.id) as total_debit,
+               (SELECT COALESCE(SUM(credit), 0) FROM lignes_ecritures WHERE ecriture_id = e.id) as total_credit
         FROM ecritures_comptables e
         ORDER BY e.date_ecriture DESC, e.id DESC
     ''')
@@ -2513,54 +2620,63 @@ def index_ecritures():
 @login_required
 def ajouter_ecriture():
     """Ajouter une écriture comptable"""
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    
-    if request.method == 'POST':
-        date_ecriture = request.form.get('date_ecriture')
-        libelle = request.form.get('libelle')
-        comptes = request.form.getlist('compte_id[]')
-        debits = request.form.getlist('debit[]')
-        credits = request.form.getlist('credit[]')
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
         
-        try:
-            conn.start_transaction()
+        if request.method == 'POST':
+            date_ecriture = request.form.get('date_ecriture')
+            libelle = request.form.get('libelle')
+            comptes = request.form.getlist('compte_id[]')
+            debits = request.form.getlist('debit[]')
+            credits = request.form.getlist('credit[]')
             
-            # Créer l'écriture
-            cursor.execute('''
-                INSERT INTO ecritures_comptables (date_ecriture, libelle)
-                VALUES (%s, %s)
-            ''', (date_ecriture, libelle))
-            id_ecriture = cursor.lastrowid
-            
-            # Ajouter les lignes
-            for i in range(len(comptes)):
-                if comptes[i] and (debits[i] or credits[i]):
-                    debit = float(debits[i]) if debits[i] else 0
-                    credit = float(credits[i]) if credits[i] else 0
-                    
-                    if debit > 0 or credit > 0:
-                        cursor.execute('''
-                            INSERT INTO lignes_ecritures (ecriture_id, compte_id, debit, credit)
-                            VALUES (%s, %s, %s, %s)
-                        ''', (id_ecriture, comptes[i], debit, credit))
-            
-            conn.commit()
-            flash('Écriture ajoutée avec succès !', 'success')
-            return redirect(url_for('index_ecritures'))
-        except Exception as e:
-            conn.rollback()
-            flash(f"Erreur : {str(e)}", 'danger')
-        finally:
-            cursor.close()
-            conn.close()
-    
-    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
-    comptes = cursor.fetchall()
-    
-    cursor.close()
-    conn.close()
-    return render_template('comptabilite/ecritures/ajouter.html', comptes=comptes)
+            try:
+                conn.start_transaction()
+                
+                # Créer l'écriture
+                cursor.execute('''
+                    INSERT INTO ecritures_comptables (date_ecriture, libelle)
+                    VALUES (%s, %s)
+                ''', (date_ecriture, libelle))
+                id_ecriture = cursor.lastrowid
+                
+                # Ajouter les lignes
+                for i in range(len(comptes)):
+                    if comptes[i] and (debits[i] or credits[i]):
+                        debit = float(debits[i]) if debits[i] else 0
+                        credit = float(credits[i]) if credits[i] else 0
+                        
+                        if debit > 0 or credit > 0:
+                            cursor.execute('''
+                                INSERT INTO lignes_ecritures (ecriture_id, compte_id, debit, credit)
+                                VALUES (%s, %s, %s, %s)
+                            ''', (id_ecriture, comptes[i], debit, credit))
+                
+                conn.commit()
+                flash('Écriture ajoutée avec succès !', 'success')
+                return redirect(url_for('index_ecritures'))
+            except Exception as e:
+                conn.rollback()
+                flash(f"Erreur : {str(e)}", 'danger')
+            finally:
+                cursor.close()
+                conn.close()
+        
+        cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+        comptes = cursor.fetchall()
+        
+        # S'assurer que numero_compte est une chaîne
+        for compte in comptes:
+            if compte['numero_compte']:
+                compte['numero_compte'] = str(compte['numero_compte'])
+        
+        cursor.close()
+        conn.close()
+        return render_template('comptabilite/ecritures/ajouter.html', comptes=comptes)
+    except Exception as e:
+        flash(f"Erreur lors du chargement du formulaire : {str(e)}", 'danger')
+        return render_template('comptabilite/ecritures/ajouter.html', comptes=[])
 
 
 @app.route('/comptabilite/ecritures/modifier/<int:id>', methods=['GET', 'POST'])
@@ -2725,12 +2841,16 @@ def grand_livre():
     cursor = conn.cursor(dictionary=True)
     user_id = session.get('user_id')
     
-    # Récupérer les filtres de date
+    # Récupérer les filtres
     date_debut = request.args.get('date_debut')
     date_fin = request.args.get('date_fin')
+    classe = request.args.get('classe')
     
-    # Récupérer tous les comptes
-    cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
+    # Récupérer les comptes avec filtre par classe si spécifié
+    if classe:
+        cursor.execute('SELECT * FROM plans_comptables WHERE numero_compte LIKE %s ORDER BY numero_compte', (f'{classe}%',))
+    else:
+        cursor.execute('SELECT * FROM plans_comptables ORDER BY numero_compte')
     comptes = cursor.fetchall()
     
     # Pour chaque compte, récupérer ses écritures
@@ -2783,7 +2903,8 @@ def grand_livre():
     return render_template('comptabilite/grand_livre.html', 
                           grand_livre=grand_livre,
                           date_debut=date_debut,
-                          date_fin=date_fin)
+                          date_fin=date_fin,
+                          classe=classe)
 
 
 @app.route('/comptabilite/balance')
@@ -2795,9 +2916,10 @@ def balance_generale():
     user_id = session.get('user_id')
     
     try:
-        # Récupérer les filtres de date
+        # Récupérer les filtres
         date_debut = request.args.get('date_debut')
         date_fin = request.args.get('date_fin')
+        classe = request.args.get('classe')
         
         # Récupérer tous les comptes avec leurs totaux
         query = '''
@@ -2810,6 +2932,10 @@ def balance_generale():
             WHERE 1=1
         '''
         params = []
+        
+        if classe:
+            query += ' AND p.numero_compte LIKE %s'
+            params.append(f'{classe}%')
         
         if date_debut:
             query += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
@@ -2853,7 +2979,8 @@ def balance_generale():
                               total_solde_debiteur=total_solde_debiteur,
                               total_solde_crediteur=total_solde_crediteur,
                               date_debut=date_debut,
-                              date_fin=date_fin)
+                              date_fin=date_fin,
+                              classe=classe)
     except Exception as e:
         cursor.close()
         conn.close()
@@ -2968,7 +3095,7 @@ def bilan_comptable():
 @app.route('/comptabilite/compte_resultat')
 @login_required
 def compte_resultat():
-    """Compte de Résultat - Calcule Produits et Charges"""
+    """Compte de Résultat - Structure hiérarchique avec calculs intermédiaires"""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     user_id = session.get('user_id')
@@ -2977,78 +3104,149 @@ def compte_resultat():
     date_debut = request.args.get('date_debut')
     date_fin = request.args.get('date_fin')
     
-    # Récupérer les comptes de Produits (type_compte = 'PRODUIT')
-    query_produits = '''
-        SELECT p.id, p.numero_compte, p.intitule,
+    # Fonction pour classifier les comptes selon leur numéro
+    def classifier_compte(numero_compte):
+        """Classifie un compte selon son numéro (SYSCOHADA)"""
+        try:
+            num = int(numero_compte.split('.')[0]) if '.' in numero_compte else int(numero_compte)
+        except:
+            return 'AUTRE'
+        
+        # Classe 7: Produits (SYSCOHADA Afrique de l'Ouest)
+        # Chiffre d'affaires : comptes 701 à 707 (ventes)
+        if 701 <= num <= 707:
+            return 'CHIFFRE_AFFAIRES'
+        elif 72 <= num < 75:
+            return 'AUTRE_PRODUIT'  # Autres produits d'exploitation
+        elif 75 <= num < 78:
+            return 'AUTRE_PRODUIT'  # Produits financiers
+        elif 78 <= num < 79:
+            return 'AUTRE_PRODUIT'  # Produits exceptionnels
+        # Classe 6: Charges
+        elif 60 <= num < 61:
+            return 'CHARGE_VARIABLE'  # Achats consommés
+        elif 61 <= num < 62:
+            return 'CHARGE_VARIABLE'  # Services extérieurs
+        elif 62 <= num < 63:
+            return 'CHARGE_FIXE'  # Autres services
+        elif 63 <= num < 64:
+            return 'CHARGE_FIXE'  # Charges de personnel
+        elif 64 <= num < 65:
+            return 'IMPOT'  # Impôts et taxes
+        elif 65 <= num < 66:
+            return 'CHARGE_FIXE'  # Autres charges d'exploitation
+        elif 66 <= num < 67:
+            return 'CHARGE_FINANCIERE'  # Charges financières
+        elif 67 <= num < 68:
+            return 'CHARGE_FIXE'  # Charges exceptionnelles
+        elif 68 <= num < 69:
+            return 'CHARGE_FIXE'  # Dotations aux amortissements
+        else:
+            return 'AUTRE'
+    
+    # Récupérer tous les comptes avec leurs soldes
+    query = '''
+        SELECT p.id, p.numero_compte, p.intitule, p.type_compte,
                COALESCE(SUM(l.debit), 0) as total_debit,
                COALESCE(SUM(l.credit), 0) as total_credit
         FROM plans_comptables p
         LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
         LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
-        WHERE p.type_compte = 'PRODUIT'
+        WHERE p.type_compte IN ('PRODUIT', 'CHARGE')
     '''
-    params_produits = []
+    params = []
     
     if date_debut:
-        query_produits += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
-        params_produits.append(date_debut)
+        query += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
+        params.append(date_debut)
     if date_fin:
-        query_produits += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
-        params_produits.append(date_fin)
+        query += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
+        params.append(date_fin)
     
-    query_produits += ' GROUP BY p.id ORDER BY p.numero_compte'
+    query += ' GROUP BY p.id ORDER BY p.numero_compte'
     
-    cursor.execute(query_produits, params_produits)
-    produits = cursor.fetchall()
+    cursor.execute(query, params)
+    comptes = cursor.fetchall()
     
-    # Récupérer les comptes de Charges (type_compte = 'CHARGE')
-    query_charges = '''
-        SELECT p.id, p.numero_compte, p.intitule,
-               COALESCE(SUM(l.debit), 0) as total_debit,
-               COALESCE(SUM(l.credit), 0) as total_credit
-        FROM plans_comptables p
-        LEFT JOIN lignes_ecritures l ON p.id = l.compte_id
-        LEFT JOIN ecritures_comptables e ON l.ecriture_id = e.id
-        WHERE p.type_compte = 'CHARGE'
-    '''
-    params_charges = []
+    # Classifier les comptes et calculer les soldes
+    chiffre_affaires_comptes = []
+    charges_variables = []
+    charges_fixes = []
+    charges_financieres = []
+    impots = []
+    autres_charges = []
+    autres_produits = []
     
-    if date_debut:
-        query_charges += ' AND (e.date_ecriture IS NULL OR e.date_ecriture >= %s)'
-        params_charges.append(date_debut)
-    if date_fin:
-        query_charges += ' AND (e.date_ecriture IS NULL OR e.date_ecriture <= %s)'
-        params_charges.append(date_fin)
+    chiffre_affaires = 0
+    total_charges_variables = 0
+    total_charges_fixes = 0
+    total_charges_financieres = 0
+    total_impots = 0
+    total_autres_charges = 0
+    total_autres_produits = 0
     
-    query_charges += ' GROUP BY p.id ORDER BY p.numero_compte'
-    
-    cursor.execute(query_charges, params_charges)
-    charges = cursor.fetchall()
-    
-    # Calculer les totaux
-    total_produits = 0
-    for compte in produits:
-        solde = compte['total_credit'] - compte['total_debit']
+    for compte in comptes:
+        classification = classifier_compte(compte['numero_compte'])
+        
+        if compte['type_compte'] == 'PRODUIT':
+            solde = compte['total_credit'] - compte['total_debit']
+        else:
+            solde = compte['total_debit'] - compte['total_credit']
+        
         compte['solde'] = solde
-        total_produits += solde
+        
+        if classification == 'CHIFFRE_AFFAIRES':
+            chiffre_affaires_comptes.append(compte)
+            chiffre_affaires += solde
+        elif classification == 'CHARGE_VARIABLE':
+            charges_variables.append(compte)
+            total_charges_variables += solde
+        elif classification == 'CHARGE_FIXE':
+            charges_fixes.append(compte)
+            total_charges_fixes += solde
+        elif classification == 'CHARGE_FINANCIERE':
+            charges_financieres.append(compte)
+            total_charges_financieres += solde
+        elif classification == 'IMPOT':
+            impots.append(compte)
+            total_impots += solde
+        elif classification == 'AUTRE' and compte['type_compte'] == 'CHARGE':
+            autres_charges.append(compte)
+            total_autres_charges += solde
+        elif classification == 'AUTRE_PRODUIT' or (classification == 'AUTRE' and compte['type_compte'] == 'PRODUIT'):
+            autres_produits.append(compte)
+            total_autres_produits += solde
     
-    total_charges = 0
-    for compte in charges:
-        solde = compte['total_debit'] - compte['total_credit']
-        compte['solde'] = solde
-        total_charges += solde
+    # Ajouter les autres charges aux charges fixes
+    total_charges_fixes += total_autres_charges
+    charges_fixes.extend(autres_charges)
     
-    # Calculer le résultat net
-    resultat_net = total_produits - total_charges
+    # Ajouter les autres produits au chiffre d'affaires
+    chiffre_affaires += total_autres_produits
+    chiffre_affaires_comptes.extend(autres_produits)
+    
+    # Calculer les résultats intermédiaires
+    marge_brute = chiffre_affaires - total_charges_variables
+    resultat_exploitation = marge_brute - total_charges_fixes
+    resultat_avant_impot = resultat_exploitation - total_charges_financieres
+    resultat_net = resultat_avant_impot - total_impots
     
     cursor.close()
     conn.close()
     
     return render_template('comptabilite/compte_resultat.html', 
-                          produits=produits,
-                          charges=charges,
-                          total_produits=total_produits,
-                          total_charges=total_charges,
+                          chiffre_affaires=chiffre_affaires,
+                          chiffre_affaires_comptes=chiffre_affaires_comptes,
+                          charges_variables=charges_variables,
+                          total_charges_variables=total_charges_variables,
+                          marge_brute=marge_brute,
+                          charges_fixes=charges_fixes,
+                          total_charges_fixes=total_charges_fixes,
+                          resultat_exploitation=resultat_exploitation,
+                          charges_financieres=charges_financieres,
+                          total_charges_financieres=total_charges_financieres,
+                          resultat_avant_impot=resultat_avant_impot,
+                          impots=impots,
                           resultat_net=resultat_net,
                           date_debut=date_debut,
                           date_fin=date_fin)

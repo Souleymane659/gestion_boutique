@@ -4,7 +4,7 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <div>
-            <h2>Plan Comptable</h2>
+            <h2>Plan Comptable SYSCOHADA Révisé</h2>
             <span class="badge badge-stock">{{ comptes|length }} Comptes</span>
         </div>
         <div style="display: flex; gap: 1rem;">
@@ -12,6 +12,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 Retour
             </a>
+            <button onclick="exporterExcel()" class="btn-add" style="background: #107c41; font-size: 1.2rem; padding: 0.75rem 1.5rem; cursor: pointer; border: none;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Exporter Excel
+            </button>
             <a href="{{ url_for('ajouter_compte') }}" class="btn-add" style="font-size: 1.2rem; padding: 0.75rem 1.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem; vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Nouveau Compte
@@ -19,28 +23,93 @@
         </div>
     </div>
 
-    <div class="search-container">
-        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="searchPlanComptableInput" class="search-input" placeholder="Rechercher un compte par numéro, intitulé ou type..." onkeyup="filterPlanComptableTable()">
+    <!-- Statistiques par classe -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 1 - Ressources</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe1|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 2 - Immobilisations</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe2|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 3 - Stocks</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe3|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 4 - Tiers</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe4|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 5 - Trésorerie</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe5|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 6 - Charges</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe6|length }}</div>
+        </div>
+        <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 1.5rem; border-radius: 12px; color: white;">
+            <div style="font-size: 0.9rem; opacity: 0.9;">Classe 7 - Produits</div>
+            <div style="font-size: 2rem; font-weight: 700;">{{ classe7|length }}</div>
+        </div>
+    </div>
+
+    <!-- Filtres avancés -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--input-bg); border-radius: 12px;">
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Rechercher</label>
+            <div class="search-container" style="margin-bottom: 0;">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="searchPlanComptableInput" class="search-input" placeholder="Numéro, intitulé ou type..." onkeyup="filterPlanComptableTable()">
+            </div>
+        </div>
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Filtrer par classe</label>
+            <select id="filterClasse" onchange="filterPlanComptableTable()" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+                <option value="">Toutes les classes</option>
+                <option value="1">Classe 1 - Ressources stables</option>
+                <option value="2">Classe 2 - Immobilisations</option>
+                <option value="3">Classe 3 - Stocks</option>
+                <option value="4">Classe 4 - Tiers</option>
+                <option value="5">Classe 5 - Trésorerie</option>
+                <option value="6">Classe 6 - Charges</option>
+                <option value="7">Classe 7 - Produits</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-size: 0.9rem; margin-bottom: 0.5rem; display: block; color: var(--text-muted);">Filtrer par type</label>
+            <select id="filterType" onchange="filterPlanComptableTable()" style="width: 100%; background: white; border: 1px solid var(--glass-border); padding: 0.8rem 1rem; border-radius: 8px; color: var(--text-main); font-family: inherit;">
+                <option value="">Tous les types</option>
+                <option value="ACTIF">Actif</option>
+                <option value="PASSIF">Passif</option>
+                <option value="CHARGE">Charge</option>
+                <option value="PRODUIT">Produit</option>
+            </select>
+        </div>
     </div>
 
     <div class="table-responsive">
         <table id="planComptableTable" style="font-size: 1.2rem; width: 100%;">
             <thead>
                 <tr style="font-size: 1.3rem; padding: 1.5rem;">
-                    <th style="padding: 1rem; width: 150px;">N° Compte</th>
-                    <th style="padding: 1rem; width: 300px;">Intitulé</th>
-                    <th style="padding: 1rem; width: 150px;">Type</th>
+                    <th style="padding: 1rem; width: 120px;">N° Compte</th>
+                    <th style="padding: 1rem; width: 350px;">Intitulé</th>
+                    <th style="padding: 1rem; width: 120px;">Classe</th>
+                    <th style="padding: 1rem; width: 120px;">Type</th>
                     <th style="padding: 1rem; width: 140px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for compte in comptes %}
-                <tr style="padding: 1.5rem;">
+                <tr style="padding: 1.5rem;" data-classe="{{ compte.numero_compte[0] }}" data-type="{{ compte.type_compte }}">
                     <td style="font-weight: 600; font-size: 1.2rem; padding: 1rem;">{{ compte.numero_compte }}</td>
                     <td style="font-size: 1.2rem; padding: 1rem;">{{ compte.intitule }}</td>
                     <td style="padding: 1rem;">
-                        <span class="badge" style="background: var(--primary); color: white; font-size: 1rem;">{{ compte.type_compte }}</span>
+                        <span class="badge" style="background: {{ get_classe_color(compte.numero_compte[0]) }}; color: white; font-size: 1rem;">Classe {{ compte.numero_compte[0] }}</span>
+                    </td>
+                    <td style="padding: 1rem;">
+                        <span class="badge" style="background: {{ get_type_color(compte.type_compte) }}; color: white; font-size: 1rem;">{{ compte.type_compte }}</span>
                     </td>
                     <td class="actions" style="padding: 1rem;">
                         <a href="{{ url_for('modifier_compte', id=compte.id) }}" class="btn-icon btn-edit" title="Modifier" style="width: 45px; height: 45px;">
@@ -54,7 +123,7 @@
                 {% endfor %}
                 {% if not comptes %}
                 <tr>
-                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.3rem;">
+                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.3rem;">
                         Aucun compte enregistré.
                     </td>
                 </tr>
@@ -64,12 +133,19 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 function filterPlanComptableTable() {
-    const input = document.getElementById('searchPlanComptableInput');
-    const filter = input.value.trim().toLowerCase();
+    const searchInput = document.getElementById('searchPlanComptableInput');
+    const classeFilter = document.getElementById('filterClasse');
+    const typeFilter = document.getElementById('filterType');
     const table = document.getElementById('planComptableTable');
     const rows = table.getElementsByTagName('tr');
+
+    const searchFilter = searchInput.value.trim().toLowerCase();
+    const classeValue = classeFilter.value;
+    const typeValue = typeFilter.value;
 
     for (let i = 1; i < rows.length; i++) {
         const cells = rows[i].getElementsByTagName('td');
@@ -77,11 +153,44 @@ function filterPlanComptableTable() {
 
         const numero = (cells[0].textContent || cells[0].innerText).toLowerCase();
         const intitule = (cells[1].textContent || cells[1].innerText).toLowerCase();
-        const type = (cells[2].textContent || cells[2].innerText).toLowerCase();
+        const type = (cells[3].textContent || cells[3].innerText).toLowerCase();
         const rowText = `${numero} ${intitule} ${type}`;
+        const rowClasse = rows[i].getAttribute('data-classe');
+        const rowType = rows[i].getAttribute('data-type');
 
-        rows[i].style.display = rowText.indexOf(filter) > -1 ? '' : 'none';
+        const matchesSearch = rowText.indexOf(searchFilter) > -1;
+        const matchesClasse = classeValue === '' || rowClasse === classeValue;
+        const matchesType = typeValue === '' || rowType === typeValue;
+
+        rows[i].style.display = (matchesSearch && matchesClasse && matchesType) ? '' : 'none';
     }
 }
+
+function telechargerPDF() {
+    const element = document.querySelector('.card');
+    const opt = {
+        margin: [0.5, 0.5, 1.5, 0.5],
+        filename: 'plan_comptable_syscohada_revisé.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            letterRendering: true,
+            scrollY: 0,
+            windowHeight: document.querySelector('.card').scrollHeight + 200
+        },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', 'tfoot'] },
+        enableLinks: true
+    };
+    html2pdf().set(opt).from(element).save();
+}
+
+function exporterExcel() {
+    const table = document.getElementById('planComptableTable');
+    const wb = XLSX.utils.table_to_book(table, {sheet: "Plan Comptable"});
+    XLSX.writeFile(wb, 'plan_comptable_syscohada_revisé.xlsx');
+}
+
 </script>
 {% endblock %}
