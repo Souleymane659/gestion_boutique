@@ -1,0 +1,41 @@
+2026-07-23 12:04:46,778 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.100.12:5000
+2026-07-23 12:04:46,779 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-07-23 12:04:55,853 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:04:55] "[32mGET / HTTP/1.1[0m" 302 -
+2026-07-23 12:04:55,879 - __main__ - INFO - Tentative de connexion - Méthode: GET
+2026-07-23 12:04:56,167 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:04:56] "GET /login HTTP/1.1" 200 -
+2026-07-23 12:04:56,466 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:04:56] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-23 12:05:15,571 - __main__ - INFO - Tentative de connexion - Méthode: POST
+2026-07-23 12:05:15,576 - __main__ - INFO - Nom d'utilisateur: admin1
+2026-07-23 12:05:15,583 - __main__ - DEBUG - Configuration DB: localhost, bien, boutique
+2026-07-23 12:05:16,639 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-23 12:05:16,639 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-23 12:05:16,640 - mysql.connector - INFO - package: mysql.connector.plugins
+2026-07-23 12:05:16,641 - mysql.connector - INFO - plugin_name: mysql_native_password
+2026-07-23 12:05:16,649 - mysql.connector - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2026-07-23 12:05:16,650 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-23 12:05:16,668 - __main__ - INFO - Utilisateur trouvé: True
+2026-07-23 12:05:16,669 - __main__ - DEBUG - Hash du mot de passe en DB: scrypt:32768:8:1$Vqw...
+2026-07-23 12:05:16,973 - __main__ - INFO - Connexion réussie pour: admin1
+2026-07-23 12:05:16,976 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:05:16] "[32mPOST /login HTTP/1.1[0m" 302 -
+2026-07-23 12:05:16,991 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-23 12:05:16,991 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-23 12:05:16,993 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-23 12:05:17,069 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-23 12:05:17,069 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-23 12:05:17,071 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-23 12:05:17,076 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:05:17] "GET / HTTP/1.1" 200 -
+2026-07-23 12:05:17,140 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:05:17] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-23 12:07:56,351 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-23 12:07:56,352 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-23 12:07:56,357 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-23 12:07:56,419 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-23 12:07:56,419 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-23 12:07:56,421 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-23 12:07:56,426 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "GET /parametres HTTP/1.1" 200 -
+2026-07-23 12:07:56,495 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-23 12:07:56,518 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/uploads/1784806675_2_image_sortie_odc.jpeg HTTP/1.1[0m" 304 -
+2026-07-23 12:07:56,522 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/uploads/1784805366_attestationaws_odc.jpeg HTTP/1.1[0m" 304 -
+2026-07-23 12:07:56,543 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/uploads/1784806675_3_dilemMali.png HTTP/1.1[0m" 304 -

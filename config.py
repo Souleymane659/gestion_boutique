@@ -11,7 +11,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
     
     # Configuration de session sécurisée
-    SESSION_COOKIE_SECURE = True  # HTTPS uniquement
+    SESSION_COOKIE_SECURE = False  # HTTPS uniquement
     SESSION_COOKIE_HTTPONLY = True  # Pas d'accès JavaScript
     SESSION_COOKIE_SAMESITE = 'Lax'  # Protection CSRF
     PERMANENT_SESSION_LIFETIME = 3600  # 1 heure

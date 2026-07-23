@@ -52,7 +52,7 @@ def validate_phone(phone):
     pattern = r'^\+?[0-9]{10,15}$'
     return re.match(pattern, phone.replace(' ', '')) is not None
 
-def rate_limit(max_attempts=5, window_minutes=15):
+def rate_limit(max_attempts=10, window_minutes=15):
     """
     Décorateur pour limiter les tentatives de connexion
     Prévient les attaques brute force
@@ -69,16 +69,30 @@ def rate_limit(max_attempts=5, window_minutes=15):
                 if attempt > now - timedelta(minutes=window_minutes)
             ]
             
-            # Vérifier si trop de tentatives
+            # Vérifier si trop de tentatives échouées
             if len(login_attempts.get(ip_address, [])) >= max_attempts:
                 return "Trop de tentatives. Réessayez dans {} minutes.".format(window_minutes), 429
             
-            # Enregistrer la tentative
-            if ip_address not in login_attempts:
-                login_attempts[ip_address] = []
-            login_attempts[ip_address].append(now)
+            # Exécuter la fonction
+            result = f(*args, **kwargs)
             
-            return f(*args, **kwargs)
+            # Si la connexion a réussi (pas de redirection vers login), nettoyer les tentatives
+            if isinstance(result, tuple) and len(result) == 2:
+                status_code = result[1]
+                if status_code == 302:  # Redirection réussie
+                    login_attempts[ip_address] = []
+            elif hasattr(result, 'status_code'):
+                if result.status_code == 302:  # Redirection réussie
+                    login_attempts[ip_address] = []
+            else:
+                # Si c'est une redirection (Flask Response)
+                try:
+                    if result.status_code == 302:
+                        login_attempts[ip_address] = []
+                except:
+                    pass
+            
+            return result
         return decorated_function
     return decorator
 
