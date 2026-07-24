@@ -5,7 +5,7 @@ from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from werkzeug.utils import secure_filename
-import pandas as pd
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
