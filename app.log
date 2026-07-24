@@ -39,3 +39,82 @@
 2026-07-23 12:07:56,518 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/uploads/1784806675_2_image_sortie_odc.jpeg HTTP/1.1[0m" 304 -
 2026-07-23 12:07:56,522 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/uploads/1784805366_attestationaws_odc.jpeg HTTP/1.1[0m" 304 -
 2026-07-23 12:07:56,543 - werkzeug - INFO - 192.168.100.12 - - [23/Jul/2026 12:07:56] "[36mGET /static/uploads/1784806675_3_dilemMali.png HTTP/1.1[0m" 304 -
+2026-07-24 14:41:37,307 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.100.12:5000
+2026-07-24 14:41:37,330 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-07-24 14:41:59,109 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:41:59] "[32mGET / HTTP/1.1[0m" 302 -
+2026-07-24 14:41:59,146 - __main__ - INFO - Tentative de connexion - Méthode: GET
+2026-07-24 14:41:59,526 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:41:59] "GET /login HTTP/1.1" 200 -
+2026-07-24 14:41:59,806 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:41:59] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:00,428 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:00] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-07-24 14:42:16,825 - __main__ - INFO - Tentative de connexion - Méthode: POST
+2026-07-24 14:42:16,836 - __main__ - INFO - Nom d'utilisateur: admin1
+2026-07-24 14:42:16,838 - __main__ - DEBUG - Configuration DB: localhost, bien, boutique
+2026-07-24 14:42:17,143 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:17,143 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:17,144 - mysql.connector - INFO - package: mysql.connector.plugins
+2026-07-24 14:42:17,144 - mysql.connector - INFO - plugin_name: mysql_native_password
+2026-07-24 14:42:17,156 - mysql.connector - INFO - AUTHENTICATION_PLUGIN_CLASS: MySQLNativePasswordAuthPlugin
+2026-07-24 14:42:17,169 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:17,176 - __main__ - INFO - Utilisateur trouvé: True
+2026-07-24 14:42:17,176 - __main__ - DEBUG - Hash du mot de passe en DB: scrypt:32768:8:1$Vqw...
+2026-07-24 14:42:17,794 - __main__ - INFO - Connexion réussie pour: admin1
+2026-07-24 14:42:17,795 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:17] "[32mPOST /login HTTP/1.1[0m" 302 -
+2026-07-24 14:42:17,807 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:17,807 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:17,809 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:17,888 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:17,889 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:17,890 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:17,895 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:17] "GET / HTTP/1.1" 200 -
+2026-07-24 14:42:17,963 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:17] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:19,903 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:19,904 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:19,917 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:19,941 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:19,942 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:19,943 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:19,949 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:19] "GET /clients HTTP/1.1" 200 -
+2026-07-24 14:42:20,009 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:20] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:23,120 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:23,121 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:23,122 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:23,139 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:23,139 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:23,141 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:23,152 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:23] "GET / HTTP/1.1" 200 -
+2026-07-24 14:42:23,223 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:23] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:24,154 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:24,155 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:24,158 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:24,196 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:24,198 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:24,200 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:24,232 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:24] "GET /produits HTTP/1.1" 200 -
+2026-07-24 14:42:24,287 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:24] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:27,877 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:27,881 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:27,884 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:27,899 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:27,900 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:27,903 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:27,911 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:27] "GET / HTTP/1.1" 200 -
+2026-07-24 14:42:27,971 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:27] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:29,317 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:29,318 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:29,320 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:29,326 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:29,329 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:29,332 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:29,337 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:29] "GET /clients HTTP/1.1" 200 -
+2026-07-24 14:42:29,386 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:29] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
+2026-07-24 14:42:30,809 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:30,812 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:30,814 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:30,846 - mysql.connector - DEBUG - Starting authorization phase
+2026-07-24 14:42:30,846 - mysql.connector - DEBUG - The provided initial strategy is mysql_native_password
+2026-07-24 14:42:30,847 - mysql.connector - DEBUG - mysql_native_password completed succesfully
+2026-07-24 14:42:30,852 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:30] "GET /fournisseurs HTTP/1.1" 200 -
+2026-07-24 14:42:30,924 - werkzeug - INFO - 127.0.0.1 - - [24/Jul/2026 14:42:30] "[36mGET /static/css/style.css?v=1.0.2 HTTP/1.1[0m" 304 -
