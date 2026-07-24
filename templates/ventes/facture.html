@@ -301,17 +301,9 @@
 <body>
 <div class="invoice-container">
     <div class="invoice-header">
-        {% if parametres and (parametres.logo1 or parametres.logo2 or parametres.logo3 or parametres.logo) %}
+        {% if parametres and parametres.logo %}
         <div class="logo-container">
-            {% if parametres.logo1 or parametres.logo %}
-            <img src="{{ parametres.logo1 or parametres.logo }}" alt="Logo 1 {{ parametres.nom_boutique }}">
-            {% endif %}
-            {% if parametres.logo2 %}
-            <img src="{{ parametres.logo2 }}" alt="Logo 2 {{ parametres.nom_boutique }}">
-            {% endif %}
-            {% if parametres.logo3 %}
-            <img src="{{ parametres.logo3 }}" alt="Logo 3 {{ parametres.nom_boutique }}">
-            {% endif %}
+            <img src="{{ parametres.logo }}" alt="Logo {{ parametres.nom_boutique }}">
         </div>
         {% endif %}
         <div class="header-content">

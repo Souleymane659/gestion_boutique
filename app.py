@@ -1,46 +1,28 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import mysql.connector
 from config import Config
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from werkzeug.utils import secure_filename
-import secrets
-from datetime import timedelta
-from security import rate_limit, validate_file_upload, generate_csrf_token, validate_csrf_token, csrf_protect
+import pandas as pd
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Configuration de session sécurisée
-app.config['SESSION_COOKIE_SECURE'] = False  # True en production avec HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600
+# Secret
+
+
+
+app.secret_key = "iug2026"
 
 # Configuration pour l'upload de fichiers
 UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# Middleware pour les en-têtes de sécurité
-@app.after_request
-def add_security_headers(response):
-    # Protection XSS
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    # Empêcher le sniffing de type MIME
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    # Protection contre le clickjacking
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    # Politique de sécurité de contenu (CSP)
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'"
-    # HSTS (HTTP Strict Transport Security) - à activer en HTTPS
-    # response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    return response
 
 # --- AUTHENTICATION ---
 
@@ -99,27 +81,19 @@ def inject_parametres():
         return dict(
             get_parametres=get_parametres,
             get_classe_color=get_classe_color,
-            get_type_color=get_type_color,
-            csrf_token=generate_csrf_token()
+            get_type_color=get_type_color
         )
     return dict(
         get_parametres=lambda: None,
         get_classe_color=get_classe_color,
-        get_type_color=get_type_color,
-        csrf_token=generate_csrf_token()
+        get_type_color=get_type_color
     )
 
 @app.route('/login', methods=['GET', 'POST'])
-@rate_limit(max_attempts=10, window_minutes=15)
 def login():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
-        
-        # Validation basique des entrées
-        if not username or not password:
-            flash('Veuillez remplir tous les champs.', 'danger')
-            return render_template('login.html')
+        username = request.form['username']
+        password = request.form['password']
         
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -135,7 +109,6 @@ def login():
             session['role'] = user['role']
             session['nom'] = user['nom']
             session['user_id'] = user['id']
-            session.permanent = True
             
             flash(f"Bienvenue {user['nom']} !", 'success')
             return redirect(url_for('dashboard'))
@@ -1417,55 +1390,45 @@ def parametres():
         devise = request.form.get('devise', 'FCFA')
         slogan = request.form.get('slogan')
         
-        # Gestion de l'upload des 3 logos
-        logo1 = None
-        logo2 = None
-        logo3 = None
-        
-        for i in range(1, 4):
-            logo_key = f'logo{i}'
-            if logo_key in request.files:
-                file = request.files[logo_key]
-                if file and file.filename != '' and allowed_file(file.filename):
-                    # Créer le dossier d'upload s'il n'existe pas
-                    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-                        os.makedirs(app.config['UPLOAD_FOLDER'])
-                    
-                    filename = secure_filename(file.filename)
-                    # Ajouter un timestamp pour éviter les doublons
-                    import time
-                    timestamp = str(int(time.time()))
-                    filename = f"{timestamp}_{i}_{filename}"
-                    
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    logo_path = f"/static/uploads/{filename}"
-                    
-                    if i == 1:
-                        logo1 = logo_path
-                    elif i == 2:
-                        logo2 = logo_path
-                    elif i == 3:
-                        logo3 = logo_path
+        # Gestion de l'upload du logo
+        logo = None
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename != '' and allowed_file(file.filename):
+                # Créer le dossier d'upload s'il n'existe pas
+                if not os.path.exists(app.config['UPLOAD_FOLDER']):
+                    os.makedirs(app.config['UPLOAD_FOLDER'])
+                
+                # Supprimer l'ancien logo si un nouveau est téléchargé
+                if parametres and parametres.get('logo'):
+                    old_logo_path = os.path.join(app.config['UPLOAD_FOLDER'], parametres['logo'].split('/')[-1])
+                    if os.path.exists(old_logo_path):
+                        os.remove(old_logo_path)
+
+                filename = secure_filename(file.filename)
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"{timestamp}_{filename}"
+                
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                logo = f"/static/uploads/{filename}"
         
         try:
             cursor.execute('SELECT * FROM parametres WHERE user_id = %s', (user_id,))
             parametres = cursor.fetchone()
             
             if parametres:
-                # Si de nouveaux logos sont uploadés, les utiliser, sinon garder les anciens
-                logo1_to_save = logo1 if logo1 else parametres.get('logo1') or parametres.get('logo')
-                logo2_to_save = logo2 if logo2 else parametres.get('logo2')
-                logo3_to_save = logo3 if logo3 else parametres.get('logo3')
+                # Si un nouveau logo est uploadé, l'utiliser, sinon garder l'ancien
+                logo_to_save = logo if logo else parametres.get('logo')
                 cursor.execute('''
                     UPDATE parametres 
-                    SET nom_boutique = %s, logo1 = %s, logo2 = %s, logo3 = %s, telephone = %s, email = %s, adresse = %s, devise = %s, slogan = %s
+                    SET nom_boutique = %s, logo = %s, telephone = %s, email = %s, adresse = %s, devise = %s, slogan = %s
                     WHERE user_id = %s
-                ''', (nom_boutique, logo1_to_save, logo2_to_save, logo3_to_save, telephone, email, adresse, devise, slogan, user_id))
+                ''', (nom_boutique, logo_to_save, telephone, email, adresse, devise, slogan, user_id))
             else:
                 cursor.execute('''
-                    INSERT INTO parametres (nom_boutique, logo1, logo2, logo3, telephone, email, adresse, devise, slogan, user_id)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (nom_boutique, logo1, logo2, logo3, telephone, email, adresse, devise, slogan, user_id))
+                    INSERT INTO parametres (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (nom_boutique, logo, telephone, email, adresse, devise, slogan, user_id))
             
             conn.commit()
             flash('Paramètres mis à jour avec succès !', 'success')

@@ -17,36 +17,14 @@
             </div>
 
             <div class="form-group">
-                <label>Logos de la boutique (3 images)</label>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                    <div>
-                        <label for="logo1" style="font-size: 0.85rem; color: var(--text-muted);">Logo 1</label>
-                        <input type="file" name="logo1" id="logo1" accept="image/*">
-                        {% if parametres and parametres.logo1 %}
-                        <div style="margin-top: 5px;">
-                            <img src="{{ parametres.logo1 }}" alt="Logo 1" style="max-width: 80px; max-height: 80px; border-radius: 8px;">
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label for="logo2" style="font-size: 0.85rem; color: var(--text-muted);">Logo 2</label>
-                        <input type="file" name="logo2" id="logo2" accept="image/*">
-                        {% if parametres and parametres.logo2 %}
-                        <div style="margin-top: 5px;">
-                            <img src="{{ parametres.logo2 }}" alt="Logo 2" style="max-width: 80px; max-height: 80px; border-radius: 8px;">
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div>
-                        <label for="logo3" style="font-size: 0.85rem; color: var(--text-muted);">Logo 3</label>
-                        <input type="file" name="logo3" id="logo3" accept="image/*">
-                        {% if parametres and parametres.logo3 %}
-                        <div style="margin-top: 5px;">
-                            <img src="{{ parametres.logo3 }}" alt="Logo 3" style="max-width: 80px; max-height: 80px; border-radius: 8px;">
-                        </div>
-                        {% endif %}
-                    </div>
+                <label for="logo">Logo de la boutique</label>
+                <input type="file" name="logo" id="logo" accept="image/*">
+                {% if parametres and parametres.logo %}
+                <div style="margin-top: 10px;">
+                    <img src="{{ parametres.logo }}" alt="Logo actuel" style="max-width: 100px; max-height: 100px; border-radius: 8px;">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">Logo actuel</p>
                 </div>
+                {% endif %}
             </div>
 
             <div class="form-group">
