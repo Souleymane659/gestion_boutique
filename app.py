@@ -8,18 +8,6 @@ from werkzeug.utils import secure_filename
 import secrets
 from datetime import timedelta
 from security import rate_limit, validate_file_upload, generate_csrf_token, validate_csrf_token, csrf_protect
-import logging
-
-# Configuration du logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('app.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -124,53 +112,35 @@ def inject_parametres():
 @app.route('/login', methods=['GET', 'POST'])
 @rate_limit(max_attempts=10, window_minutes=15)
 def login():
-    logger.info(f"Tentative de connexion - Méthode: {request.method}")
-    
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         
-        logger.info(f"Nom d'utilisateur: {username}")
-        logger.debug(f"Configuration DB: {Config.MYSQL_HOST}, {Config.MYSQL_USER}, {Config.MYSQL_DB}")
-        
         # Validation basique des entrées
         if not username or not password:
-            logger.warning("Champs vides")
             flash('Veuillez remplir tous les champs.', 'danger')
             return render_template('login.html')
         
-        try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute('SELECT * FROM utilisateurs WHERE username = %s', (username,))
-            user = cursor.fetchone()
-            cursor.close()
-            conn.close()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM utilisateurs WHERE username = %s', (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        # Authentification avec hachage
+        if user and check_password_hash(user['password'], password):
+            session['logged_in'] = True
+            session['username'] = user['username']
+            session['role'] = user['role']
+            session['nom'] = user['nom']
+            session['user_id'] = user['id']
+            session.permanent = True
             
-            logger.info(f"Utilisateur trouvé: {user is not None}")
-            
-            if user:
-                logger.debug(f"Hash du mot de passe en DB: {user['password'][:20]}...")
-            
-            # Authentification avec hachage
-            if user and check_password_hash(user['password'], password):
-                logger.info(f"Connexion réussie pour: {username}")
-                session['logged_in'] = True
-                session['username'] = user['username']
-                session['role'] = user['role']
-                session['nom'] = user['nom']
-                session['user_id'] = user['id']
-                session.permanent = True
-                
-                flash(f"Bienvenue {user['nom']} !", 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                logger.warning(f"Identifiants incorrects pour: {username}")
-                flash('Identifiants incorrects.', 'danger')
-                
-        except Exception as e:
-            logger.error(f"Erreur lors de la connexion: {str(e)}", exc_info=True)
-            flash('Erreur lors de la connexion. Veuillez réessayer.', 'danger')
+            flash(f"Bienvenue {user['nom']} !", 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Identifiants incorrects.', 'danger')
             
     return render_template('login.html')
 
